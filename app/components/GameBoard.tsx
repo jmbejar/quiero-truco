@@ -30,7 +30,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
       {/* Middle area with muestra and played cards */}
       <div className="flex justify-center items-center my-8 w-full">
         {/* AI played card */}
-        <div className="flex-1 flex justify-end mr-4">
+        <div className="flex-1 flex justify-end mr-32">
           {aiPlayedCard ? (
             <Card number={aiPlayedCard.number} palo={aiPlayedCard.palo} />
           ) : (
@@ -53,7 +53,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
         </div>
 
         {/* Player played card */}
-        <div className="flex-1 flex justify-start ml-4">
+        <div className="flex-1 flex justify-start ml-32">
           {playerPlayedCard ? (
             <Card number={playerPlayedCard.number} palo={playerPlayedCard.palo} />
           ) : (
