@@ -10,7 +10,9 @@ export default function Home() {
   const [gameState, setGameState] = useState<{
     topCards: CardProps[];
     bottomCards: CardProps[];
-    middleCard: CardProps | null;
+    muestraCard: CardProps;
+    playerPlayedCard: CardProps | null;
+    aiPlayedCard: CardProps | null;
     deck: CardProps[];
     playedCards: CardProps[];
     gamePhase: 'initial' | 'playerTurn' | 'aiTurn' | 'roundEnd';
@@ -19,7 +21,9 @@ export default function Home() {
   }>({
     topCards: [],
     bottomCards: [],
-    middleCard: null,
+    muestraCard: { number: 0, palo: 'oro' },
+    playerPlayedCard: null,
+    aiPlayedCard: null,
     deck: [],
     playedCards: [],
     gamePhase: 'initial',
@@ -34,7 +38,7 @@ export default function Home() {
 
   // AI turn logic
   useEffect(() => {
-    if (gameState.gamePhase === 'aiTurn') {
+    if (gameState.gamePhase === 'aiTurn' && !gameState.aiThinking) {
       handleAITurn();
     }
   }, [gameState.gamePhase, gameState.aiThinking]);
@@ -43,10 +47,17 @@ export default function Home() {
     const fullDeck = createDeck();
     const { topCards, bottomCards, remainingDeck } = dealCards(fullDeck);
     
+    // Get a random card from the remaining deck as the muestra
+    const muestraIndex = Math.floor(Math.random() * remainingDeck.length);
+    const muestraCard = remainingDeck[muestraIndex];
+    remainingDeck.splice(muestraIndex, 1);
+    
     setGameState({
       topCards,
       bottomCards,
-      middleCard: null,
+      muestraCard,
+      playerPlayedCard: null,
+      aiPlayedCard: null,
       deck: remainingDeck,
       playedCards: [],
       gamePhase: 'playerTurn',
@@ -66,7 +77,7 @@ export default function Home() {
     setGameState(prev => ({
       ...prev,
       bottomCards: updatedBottomCards,
-      middleCard: selectedCard,
+      playerPlayedCard: selectedCard,
       playedCards: [...prev.playedCards, selectedCard],
       gamePhase: 'aiTurn',
       message: 'AI is thinking...',
@@ -81,14 +92,14 @@ export default function Home() {
       console.log('Calling getAIDecision with:', {
         bottomCards: gameState.bottomCards,
         topCards: gameState.topCards,
-        middleCard: gameState.middleCard || { number: 0, palo: 'oro' },
+        muestraCard: gameState.muestraCard,
         gamePhase: gameState.gamePhase
       });
       
       const aiDecision = await getAIDecision(
         gameState.bottomCards,
         gameState.topCards,
-        gameState.middleCard || { number: 0, palo: 'oro' },
+        gameState.muestraCard,
         gameState.gamePhase
       );
       
@@ -108,7 +119,7 @@ export default function Home() {
         setGameState(prev => ({
           ...prev,
           topCards: updatedTopCards,
-          middleCard: selectedCard,
+          aiPlayedCard: selectedCard,
           playedCards: [...prev.playedCards, selectedCard],
           gamePhase: 'playerTurn',
           message: `AI played a card. ${aiDecision.explanation}. Your turn!`,
@@ -135,7 +146,7 @@ export default function Home() {
       setGameState(prev => ({
         ...prev,
         topCards: updatedTopCards,
-        middleCard: selectedCard,
+        aiPlayedCard: selectedCard,
         playedCards: [...prev.playedCards, selectedCard],
         gamePhase: 'playerTurn',
         message: 'AI played a card. Your turn!',
@@ -152,6 +163,17 @@ export default function Home() {
     }));
   };
 
+  const clearPlayedCards = () => {
+    if (gameState.playerPlayedCard && gameState.aiPlayedCard) {
+      setGameState(prev => ({
+        ...prev,
+        playerPlayedCard: null,
+        aiPlayedCard: null,
+        message: 'Your turn! Select a card to play.'
+      }));
+    }
+  };
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-green-800 p-4">
       <h1 className="text-3xl font-bold text-white mb-4">Quiero Truco</h1>
@@ -164,7 +186,9 @@ export default function Home() {
         <GameBoard 
           topCards={gameState.topCards} 
           bottomCards={gameState.bottomCards} 
-          middleCard={gameState.middleCard || { number: 0, palo: 'oro' }}
+          middleCard={gameState.muestraCard}
+          playerPlayedCard={gameState.playerPlayedCard}
+          aiPlayedCard={gameState.aiPlayedCard}
           onPlayerCardSelect={handlePlayerCardSelect}
         />
       </div>
@@ -176,6 +200,14 @@ export default function Home() {
         >
           New Game
         </button>
+        {gameState.playerPlayedCard && gameState.aiPlayedCard && (
+          <button 
+            onClick={clearPlayedCards}
+            className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+          >
+            Next Hand
+          </button>
+        )}
         <div className="text-white">
           <p>Cards in deck: {gameState.deck.length}</p>
           <p>Cards played: {gameState.playedCards.length}</p>

@@ -5,6 +5,8 @@ interface GameBoardProps {
   topCards: CardProps[];
   bottomCards: CardProps[];
   middleCard: CardProps;
+  playerPlayedCard?: CardProps | null;
+  aiPlayedCard?: CardProps | null;
   onPlayerCardSelect?: (index: number) => void;
 }
 
@@ -12,6 +14,8 @@ const GameBoard: React.FC<GameBoardProps> = ({
   topCards, 
   bottomCards, 
   middleCard,
+  playerPlayedCard,
+  aiPlayedCard,
   onPlayerCardSelect 
 }) => {
   return (
@@ -23,16 +27,41 @@ const GameBoard: React.FC<GameBoardProps> = ({
         ))}
       </div>
 
-      {/* Middle card */}
-      <div className="flex justify-center my-8">
-        {middleCard.number > 0 && (
-          <Card number={middleCard.number} palo={middleCard.palo} />
-        )}
-        {middleCard.number === 0 && (
-          <div className="w-24 h-36 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
-            <span className="text-gray-400">Play a card</span>
-          </div>
-        )}
+      {/* Middle area with muestra and played cards */}
+      <div className="flex justify-center items-center my-8 w-full">
+        {/* AI played card */}
+        <div className="flex-1 flex justify-end mr-4">
+          {aiPlayedCard ? (
+            <Card number={aiPlayedCard.number} palo={aiPlayedCard.palo} />
+          ) : (
+            <div className="w-24 h-36 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center opacity-50">
+              <span className="text-gray-400">AI card</span>
+            </div>
+          )}
+        </div>
+
+        {/* Muestra card (in the center) */}
+        <div className="mx-4 transform rotate-90">
+          {middleCard.number > 0 && (
+            <div className="relative">
+              <Card number={middleCard.number} palo={middleCard.palo} />
+              <div className="absolute -bottom-6 left-0 right-0 text-center text-white text-xs bg-black bg-opacity-50 py-1 rounded">
+                Muestra
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Player played card */}
+        <div className="flex-1 flex justify-start ml-4">
+          {playerPlayedCard ? (
+            <Card number={playerPlayedCard.number} palo={playerPlayedCard.palo} />
+          ) : (
+            <div className="w-24 h-36 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center opacity-50">
+              <span className="text-gray-400">Your card</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Bottom row of cards (player) - clickable */}
