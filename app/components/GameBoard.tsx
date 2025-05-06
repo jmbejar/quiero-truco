@@ -10,10 +10,10 @@ interface GameBoardProps {
 const GameBoard: React.FC<GameBoardProps> = ({ topCards, bottomCards, middleCard }) => {
   return (
     <div className="flex flex-col items-center justify-between h-full w-full">
-      {/* Top row of cards (opponent) */}
+      {/* Top row of cards (opponent) - face down */}
       <div className="flex justify-center gap-4 w-full">
         {topCards.map((card, index) => (
-          <Card key={`top-${index}`} number={card.number} palo={card.palo} />
+          <Card key={`top-${index}`} number={card.number} palo={card.palo} faceDown={true} />
         ))}
       </div>
 
