@@ -5,6 +5,7 @@ import GameBoard from './components/GameBoard';
 import { CardProps } from './components/Card';
 import { createDeck, dealCards } from './utils/deckUtils';
 import { getAIDecision } from './utils/aiUtils';
+import { determineWinner } from './utils/gameUtils';
 
 export default function Home() {
   const [gameState, setGameState] = useState<{
@@ -18,6 +19,9 @@ export default function Home() {
     gamePhase: 'initial' | 'playerTurn' | 'aiTurn' | 'roundEnd';
     message: string;
     aiThinking: boolean;
+    playerWins: number;
+    aiWins: number;
+    resultHistory: ('win' | 'lose')[];
   }>({
     topCards: [],
     bottomCards: [],
@@ -28,7 +32,10 @@ export default function Home() {
     playedCards: [],
     gamePhase: 'initial',
     message: 'Game starting...',
-    aiThinking: false
+    aiThinking: false,
+    playerWins: 0,
+    aiWins: 0,
+    resultHistory: []
   });
 
   // Initialize the game when the component mounts
@@ -55,7 +62,10 @@ export default function Home() {
       playedCards: [],
       gamePhase: 'playerTurn',
       message: 'Your turn! Select a card to play.',
-      aiThinking: false
+      aiThinking: false,
+      playerWins: 0,
+      aiWins: 0,
+      resultHistory: []
     });
   };
 
@@ -98,6 +108,9 @@ export default function Home() {
 
         console.log('AI selected card:', selectedCard, 'at index:', cardIndex);
         
+        // Determine winner of the round
+        const playerWon = determineWinner(gameState.playerPlayedCard!, selectedCard, gameState.muestraCard);
+        
         setGameState(prev => ({
           ...prev,
           topCards: updatedTopCards,
@@ -105,7 +118,10 @@ export default function Home() {
           playedCards: [...prev.playedCards, selectedCard],
           gamePhase: 'playerTurn',
           message: `AI played a card. ${aiDecision.explanation}. Your turn!`,
-          aiThinking: false
+          aiThinking: false,
+          playerWins: playerWon ? prev.playerWins + 1 : prev.playerWins,
+          aiWins: !playerWon ? prev.aiWins + 1 : prev.aiWins,
+          resultHistory: [...prev.resultHistory, playerWon ? 'win' : 'lose']
         }));
 
         // Check if round should end
@@ -125,6 +141,9 @@ export default function Home() {
 
       console.log('AI fallback: selected random card at index:', randomIndex);
       
+      // Determine winner of the round
+      const playerWon = determineWinner(gameState.playerPlayedCard!, selectedCard, gameState.muestraCard);
+      
       setGameState(prev => ({
         ...prev,
         topCards: updatedTopCards,
@@ -132,7 +151,10 @@ export default function Home() {
         playedCards: [...prev.playedCards, selectedCard],
         gamePhase: 'playerTurn',
         message: 'AI played a card. Your turn!',
-        aiThinking: false
+        aiThinking: false,
+        playerWins: playerWon ? prev.playerWins + 1 : prev.playerWins,
+        aiWins: !playerWon ? prev.aiWins + 1 : prev.aiWins,
+        resultHistory: [...prev.resultHistory, playerWon ? 'win' : 'lose']
       }));
     }
   }, [gameState, setGameState, endRound]);
@@ -184,6 +206,15 @@ export default function Home() {
       
       <div className="bg-white rounded-lg p-3 mb-4 w-full max-w-4xl">
         <p className="text-center">{gameState.message}</p>
+        {gameState.resultHistory.length > 0 && (
+          <div className="text-center text-2xl mt-2">
+            {gameState.resultHistory.map((result, index) => (
+              <span key={index} className="mx-1">
+                {result === 'win' ? '✅' : '❌'}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
       
       <div className="w-full max-w-4xl h-[60vh]">
