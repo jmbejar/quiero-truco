@@ -75,23 +75,36 @@ export default function Home() {
   };
 
   const handleAITurn = async () => {
+    console.log('AI turn started');
     try {
       // Get AI decision
+      console.log('Calling getAIDecision with:', {
+        bottomCards: gameState.bottomCards,
+        topCards: gameState.topCards,
+        middleCard: gameState.middleCard || { number: 0, palo: 'oro' },
+        gamePhase: gameState.gamePhase
+      });
+      
       const aiDecision = await getAIDecision(
         gameState.bottomCards,
         gameState.topCards,
         gameState.middleCard || { number: 0, palo: 'oro' },
         gameState.gamePhase
       );
+      
+      console.log('AI decision received:', aiDecision);
 
       // Short delay to simulate thinking
       setTimeout(() => {
+        console.log('AI timeout completed, processing decision');
         // Get the selected card and remove it from AI's hand
         const cardIndex = Math.min(aiDecision.cardIndex, gameState.topCards.length - 1);
         const selectedCard = gameState.topCards[cardIndex];
         const updatedTopCards = [...gameState.topCards];
         updatedTopCards.splice(cardIndex, 1);
 
+        console.log('AI selected card:', selectedCard, 'at index:', cardIndex);
+        
         setGameState(prev => ({
           ...prev,
           topCards: updatedTopCards,
@@ -104,6 +117,7 @@ export default function Home() {
 
         // Check if round should end
         if (updatedTopCards.length === 0 || gameState.bottomCards.length === 0) {
+          console.log('Round ending condition met');
           endRound();
         }
       }, 1500);
@@ -116,6 +130,8 @@ export default function Home() {
       const updatedTopCards = [...gameState.topCards];
       updatedTopCards.splice(randomIndex, 1);
 
+      console.log('AI fallback: selected random card at index:', randomIndex);
+      
       setGameState(prev => ({
         ...prev,
         topCards: updatedTopCards,
