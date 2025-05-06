@@ -34,7 +34,7 @@ export default function Home() {
 
   // AI turn logic
   useEffect(() => {
-    if (gameState.gamePhase === 'aiTurn' && !gameState.aiThinking) {
+    if (gameState.gamePhase === 'aiTurn') {
       handleAITurn();
     }
   }, [gameState.gamePhase, gameState.aiThinking]);
