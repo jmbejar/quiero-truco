@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import GameBoard from './components/GameBoard';
 import { CardProps } from './components/Card';
 import { createDeck, dealCards } from './utils/deckUtils';
@@ -36,13 +36,6 @@ export default function Home() {
     initializeGame();
   }, []);
 
-  // AI turn logic
-  useEffect(() => {
-    if (gameState.gamePhase === 'aiTurn' && !gameState.aiThinking) {
-      handleAITurn();
-    }
-  }, [gameState.gamePhase, gameState.aiThinking]);
-
   const initializeGame = () => {
     const fullDeck = createDeck();
     const { topCards, bottomCards, remainingDeck } = dealCards(fullDeck);
@@ -66,26 +59,15 @@ export default function Home() {
     });
   };
 
-  const handlePlayerCardSelect = (index: number) => {
-    if (gameState.gamePhase !== 'playerTurn') return;
-
-    // Get the selected card and remove it from player's hand
-    const selectedCard = gameState.bottomCards[index];
-    const updatedBottomCards = [...gameState.bottomCards];
-    updatedBottomCards.splice(index, 1);
-
+  const endRound = useCallback(() => {
     setGameState(prev => ({
       ...prev,
-      bottomCards: updatedBottomCards,
-      playerPlayedCard: selectedCard,
-      playedCards: [...prev.playedCards, selectedCard],
-      gamePhase: 'aiTurn',
-      message: 'AI is thinking...',
-      aiThinking: true
+      gamePhase: 'roundEnd',
+      message: 'Round ended! Click "New Game" to play again.'
     }));
-  };
+  }, [setGameState]);
 
-  const handleAITurn = async () => {
+  const handleAITurn = useCallback(async () => {
     console.log('AI turn started');
     try {
       // Get AI decision
@@ -153,24 +135,46 @@ export default function Home() {
         aiThinking: false
       }));
     }
-  };
+  }, [gameState, setGameState, endRound]);
 
-  const endRound = () => {
+  // AI turn logic
+  useEffect(() => {
+    if (gameState.gamePhase === 'aiTurn') {
+      handleAITurn();
+    }
+  }, [gameState.gamePhase, gameState.aiThinking, handleAITurn]);
+
+  const handlePlayerCardSelect = (index: number) => {
+    if (gameState.gamePhase !== 'playerTurn') return;
+
+    // Get the selected card and remove it from player's hand
+    const selectedCard = gameState.bottomCards[index];
+    const updatedBottomCards = [...gameState.bottomCards];
+    updatedBottomCards.splice(index, 1);
+
     setGameState(prev => ({
       ...prev,
-      gamePhase: 'roundEnd',
-      message: 'Round ended! Click "New Game" to play again.'
+      bottomCards: updatedBottomCards,
+      playerPlayedCard: selectedCard,
+      playedCards: [...prev.playedCards, selectedCard],
+      gamePhase: 'aiTurn',
+      message: 'AI is thinking...',
+      aiThinking: true
     }));
   };
 
   const clearPlayedCards = () => {
     if (gameState.playerPlayedCard && gameState.aiPlayedCard) {
-      setGameState(prev => ({
-        ...prev,
-        playerPlayedCard: null,
-        aiPlayedCard: null,
-        message: 'Your turn! Select a card to play.'
-      }));
+      if (gameState.gamePhase === 'roundEnd') {
+        initializeGame();
+      } else {
+        setGameState(prev => ({
+          ...prev,
+          playerPlayedCard: null,
+          aiPlayedCard: null,
+          message: 'Your turn! Select a card to play.'
+        }));
+      }
     }
   };
 
@@ -194,24 +198,14 @@ export default function Home() {
       </div>
       
       <div className="mt-6 flex gap-4">
-        <button 
-          onClick={initializeGame}
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-        >
-          New Game
-        </button>
         {gameState.playerPlayedCard && gameState.aiPlayedCard && (
           <button 
             onClick={clearPlayedCards}
             className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
           >
-            Next Hand
+            {gameState.gamePhase === 'roundEnd' ? 'Next Round' : 'Next Hand'}
           </button>
         )}
-        <div className="text-white">
-          <p>Cards in deck: {gameState.deck.length}</p>
-          <p>Cards played: {gameState.playedCards.length}</p>
-        </div>
       </div>
     </div>
   );
