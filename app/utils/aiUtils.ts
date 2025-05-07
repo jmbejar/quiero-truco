@@ -1,8 +1,9 @@
 import { CardProps } from '../components/Card';
 
-interface AIDecision {
+export interface AIDecision {
   cardIndex: number;
   explanation: string;
+  wantsTruco?: boolean;
 }
 
 export async function getAIDecision(
@@ -10,9 +11,10 @@ export async function getAIDecision(
   opponentCards: CardProps[],
   middleCard: CardProps,
   gameState: string = 'Initial deal',
+  trucoState: string = 'none',
   playedCards: CardProps[] = []
 ): Promise<AIDecision> {
-  console.log('getAIDecision called with:', { playerPlayedCard, opponentCards, middleCard, gameState, playedCards });
+  console.log('getAIDecision called with:', { playerPlayedCard, opponentCards, middleCard, gameState, trucoState, playedCards });
   
   try {
     console.log('Sending request to /api/ai');
@@ -26,6 +28,7 @@ export async function getAIDecision(
         opponentCards,
         middleCard,
         gameState,
+        trucoState,
         playedCards
       }),
     });

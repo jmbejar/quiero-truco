@@ -9,6 +9,7 @@ import { determineWinner } from './utils/gameUtils';
 
 export default function Home() {
   const [gameState, setGameState] = useState<{
+    aiDecisionCardIndex: number | null;
     topCards: CardProps[];
     bottomCards: CardProps[];
     muestraCard: CardProps;
@@ -26,7 +27,10 @@ export default function Home() {
     aiScore: number;
     playerStartsRound: boolean;
     lastTurnWinner: 'player' | 'ai' | null;
+    trucoState: 'none' | 'playerCalled' | 'aiCalled' | 'accepted' | 'rejected';
+    trucoResponse: string | null;
   }>({
+    aiDecisionCardIndex: null,
     topCards: [],
     bottomCards: [],
     muestraCard: { number: 0, palo: 'oro' },
@@ -43,7 +47,9 @@ export default function Home() {
     playerScore: 0,
     aiScore: 0,
     playerStartsRound: Math.random() < 0.5,
-    lastTurnWinner: null
+    lastTurnWinner: null,
+    trucoState: 'none',
+    trucoResponse: null
   });
 
   // Initialize the game when the component mounts
@@ -61,6 +67,7 @@ export default function Home() {
     remainingDeck.splice(muestraIndex, 1);
     
     setGameState(prev => ({
+      aiDecisionCardIndex: null,
       topCards,
       bottomCards,
       muestraCard,
@@ -77,7 +84,9 @@ export default function Home() {
       playerScore: prev.playerScore,
       aiScore: prev.aiScore,
       playerStartsRound: !prev.playerStartsRound,
-      lastTurnWinner: null
+      lastTurnWinner: null,
+      trucoState: 'none',
+      trucoResponse: null
     }));
   };
 
@@ -126,6 +135,7 @@ export default function Home() {
         const playerWinsInRound = newResultHistory.filter(result => result === 'win').length;
         const aiWinsInRound = newResultHistory.filter(result => result === 'lose').length;
         const roundEnded = playerWinsInRound >= 2 || aiWinsInRound >= 2;
+        const pointsToAward = prev.trucoState === 'accepted' ? 2 : 1;
 
         return {
           ...prev,
@@ -134,14 +144,14 @@ export default function Home() {
           playedCards: [...prev.playedCards, selectedCard],
           gamePhase: roundEnded ? 'roundEnd' : 'showingPlayedCards',
           message: roundEnded 
-            ? (playerWinsInRound >= 2 ? 'You won the round! +2 points' : 'AI won the round! +2 points')
+            ? (playerWinsInRound >= 2 ? `You won the round! +${pointsToAward} points` : `AI won the round! +${pointsToAward} points`)
             : (playerWon ? 'You won this hand!' : 'AI won this hand!'),
           aiThinking: false,
           playerWins: playerWon ? prev.playerWins + 1 : prev.playerWins,
           aiWins: !playerWon ? prev.aiWins + 1 : prev.aiWins,
           resultHistory: newResultHistory,
-          playerScore: roundEnded && playerWinsInRound >= 2 ? prev.playerScore + 2 : prev.playerScore,
-          aiScore: roundEnded && aiWinsInRound >= 2 ? prev.aiScore + 2 : prev.aiScore,
+          playerScore: roundEnded && playerWinsInRound >= 2 ? prev.playerScore + pointsToAward : prev.playerScore,
+          aiScore: roundEnded && aiWinsInRound >= 2 ? prev.aiScore + pointsToAward : prev.aiScore,
           lastTurnWinner: playerWon ? 'player' : 'ai'
         };
       }
@@ -168,6 +178,7 @@ export default function Home() {
         topCards: gameState.topCards,
         muestraCard: gameState.muestraCard,
         gamePhase: gameState.gamePhase,
+        trucoState: gameState.trucoState,
         playedCards: gameState.playedCards
       });
       
@@ -176,6 +187,7 @@ export default function Home() {
         gameState.topCards,
         gameState.muestraCard,
         gameState.gamePhase,
+        gameState.trucoState,
         gameState.playedCards
       );
       
@@ -184,7 +196,20 @@ export default function Home() {
       // Short delay to simulate thinking
       setTimeout(() => {
         console.log('AI timeout completed, processing decision');
-        // Get the selected card and remove it from AI's hand
+        
+        // If AI wants to call truco
+        if (aiDecision.wantsTruco) {
+          setGameState(prev => ({
+            ...prev,
+            trucoState: 'aiCalled',
+            aiDecisionCardIndex: aiDecision.cardIndex,
+            message: 'AI says: ¡Truco! Do you accept?',
+            aiThinking: false
+          }));
+          return;
+        }
+
+        // Only play the card if AI didn't call truco
         const cardIndex = Math.min(aiDecision.cardIndex, gameState.topCards.length - 1);
         const selectedCard = gameState.topCards[cardIndex];
         const updatedTopCards = [...gameState.topCards];
@@ -200,6 +225,7 @@ export default function Home() {
             const playerWinsInRound = newResultHistory.filter(result => result === 'win').length;
             const aiWinsInRound = newResultHistory.filter(result => result === 'lose').length;
             const roundEnded = playerWinsInRound >= 2 || aiWinsInRound >= 2;
+            const pointsToAward = prev.trucoState === 'accepted' ? 2 : 1;
 
             return {
               ...prev,
@@ -208,14 +234,14 @@ export default function Home() {
               playedCards: [...prev.playedCards, selectedCard],
               gamePhase: roundEnded ? 'roundEnd' : 'showingPlayedCards',
               message: roundEnded 
-                ? (playerWinsInRound >= 2 ? 'You won the round! +2 points' : 'AI won the round! +2 points')
+                ? (playerWinsInRound >= 2 ? `You won the round! +${pointsToAward} points` : `AI won the round! +${pointsToAward} points`)
                 : (playerWon ? 'You won this hand!' : 'AI won this hand!'),
               aiThinking: false,
               playerWins: playerWon ? prev.playerWins + 1 : prev.playerWins,
               aiWins: !playerWon ? prev.aiWins + 1 : prev.aiWins,
               resultHistory: newResultHistory,
-              playerScore: roundEnded && playerWinsInRound >= 2 ? prev.playerScore + 2 : prev.playerScore,
-              aiScore: roundEnded && aiWinsInRound >= 2 ? prev.aiScore + 2 : prev.aiScore,
+              playerScore: roundEnded && playerWinsInRound >= 2 ? prev.playerScore + pointsToAward : prev.playerScore,
+              aiScore: roundEnded && aiWinsInRound >= 2 ? prev.aiScore + pointsToAward : prev.aiScore,
               lastTurnWinner: playerWon ? 'player' : 'ai'
             };
           }
@@ -257,6 +283,7 @@ export default function Home() {
           const playerWinsInRound = newResultHistory.filter(result => result === 'win').length;
           const aiWinsInRound = newResultHistory.filter(result => result === 'lose').length;
           const roundEnded = playerWinsInRound >= 2 || aiWinsInRound >= 2;
+          const pointsToAward = prev.trucoState === 'accepted' ? 2 : 1;
 
           return {
             ...prev,
@@ -265,14 +292,14 @@ export default function Home() {
             playedCards: [...prev.playedCards, selectedCard],
             gamePhase: roundEnded ? 'roundEnd' : 'showingPlayedCards',
             message: roundEnded 
-              ? (playerWinsInRound >= 2 ? 'You won the round! +2 points' : 'AI won the round! +2 points')
+              ? (playerWinsInRound >= 2 ? `You won the round! +${pointsToAward} points` : `AI won the round! +${pointsToAward} points`)
               : (playerWon ? 'You won this hand!' : 'AI won this hand!'),
             aiThinking: false,
             playerWins: playerWon ? prev.playerWins + 1 : prev.playerWins,
             aiWins: !playerWon ? prev.aiWins + 1 : prev.aiWins,
             resultHistory: newResultHistory,
-            playerScore: roundEnded && playerWinsInRound >= 2 ? prev.playerScore + 2 : prev.playerScore,
-            aiScore: roundEnded && aiWinsInRound >= 2 ? prev.aiScore + 2 : prev.aiScore,
+            playerScore: roundEnded && playerWinsInRound >= 2 ? prev.playerScore + pointsToAward : prev.playerScore,
+            aiScore: roundEnded && aiWinsInRound >= 2 ? prev.aiScore + pointsToAward : prev.aiScore,
             lastTurnWinner: playerWon ? 'player' : 'ai'
           };
         }
@@ -291,12 +318,114 @@ export default function Home() {
     }
   }, [gameState, setGameState, endRound]);
 
+  const handleTruco = () => {
+    if (gameState.gamePhase !== 'playerTurn' || gameState.trucoState !== 'none') return;
+
+    setGameState(prev => ({
+      ...prev,
+      trucoState: 'playerCalled',
+      message: 'AI is thinking about truco...',
+      aiThinking: true
+    }));
+
+    // Simulate AI thinking about truco
+    setTimeout(() => {
+      // For now, randomly accept or reject
+      const aiAccepts = Math.random() < 0.5;
+      setGameState(prev => ({
+        ...prev,
+        trucoState: aiAccepts ? 'accepted' : 'rejected',
+        trucoResponse: aiAccepts ? 'Quiero' : 'No quiero',
+        message: aiAccepts ? 'AI accepted truco!' : 'AI rejected truco! You get 1 point!',
+        aiThinking: false,
+        // If rejected, end the round and give points to the player
+        gamePhase: aiAccepts ? prev.gamePhase : 'roundEnd',
+        playerScore: aiAccepts ? prev.playerScore : prev.playerScore + 1
+      }));
+    }, 1500);
+  };
+
+  const handleTrucoResponse = (accept: boolean) => {
+    let updatedTopCards: CardProps[] | null = null;
+    let checkEndRound = false;
+    setGameState(prev => {
+      if (accept) {
+        // If player accepts truco, continue with AI's turn and play the card
+        const cardIndex = Math.min(prev.aiDecisionCardIndex!, gameState.topCards.length - 1);
+        const selectedCard = prev.topCards[cardIndex];
+        updatedTopCards = [...prev.topCards];
+        updatedTopCards.splice(cardIndex, 1);
+
+        checkEndRound = true;
+
+        console.log('AI selected card:', selectedCard, 'at index:', cardIndex);
+        
+        if (prev.playerPlayedCard) {
+          const playerWon = determineWinner(prev.playerPlayedCard, selectedCard, prev.muestraCard);
+          const newResultHistory: ('win' | 'lose')[] = [...prev.resultHistory, playerWon ? 'win' : 'lose'];
+          const playerWinsInRound = newResultHistory.filter(result => result === 'win').length;
+          const aiWinsInRound = newResultHistory.filter(result => result === 'lose').length;
+          const roundEnded = playerWinsInRound >= 2 || aiWinsInRound >= 2;
+          const pointsToAward = prev.trucoState === 'accepted' ? 2 : 1;
+
+          return {
+            ...prev,
+            trucoState: 'accepted',
+            topCards: updatedTopCards,
+            aiPlayedCard: selectedCard,
+            playedCards: [...prev.playedCards, selectedCard],
+            gamePhase: roundEnded ? 'roundEnd' : 'showingPlayedCards',
+            message: roundEnded 
+              ? (playerWinsInRound >= 2 ? `You won the round! +${pointsToAward} points` : `AI won the round! +${pointsToAward} points`)
+              : (playerWon ? 'You won this hand!' : 'AI won this hand!'),
+            aiThinking: false,
+            playerWins: playerWon ? prev.playerWins + 1 : prev.playerWins,
+            aiWins: !playerWon ? prev.aiWins + 1 : prev.aiWins,
+            resultHistory: newResultHistory,
+            playerScore: roundEnded && playerWinsInRound >= 2 ? prev.playerScore + pointsToAward : prev.playerScore,
+            aiScore: roundEnded && aiWinsInRound >= 2 ? prev.aiScore + pointsToAward : prev.aiScore,
+            lastTurnWinner: playerWon ? 'player' : 'ai'
+          };
+        }
+
+        // If player hasn't played yet, just update the state
+        return {
+          ...prev,
+          trucoState: 'accepted',
+          topCards: updatedTopCards,
+          aiPlayedCard: selectedCard,
+          playedCards: [selectedCard],
+          gamePhase: 'playerTurn',
+          // TODO: Add explanation
+          message: `AI played a card. Your turn!`,
+          aiThinking: false
+        };
+      } else {
+        return {
+          ...prev,
+          trucoState: 'rejected',
+          message: 'You rejected truco! AI gets 1 point.',
+          gamePhase: 'roundEnd',
+          aiScore: prev.aiScore + 1
+        };
+      }
+    });
+
+    if (checkEndRound && updatedTopCards) {
+      // Check if game should end (no more cards)
+      if (updatedTopCards.length === 0 && gameState.bottomCards.length === 0) {
+        console.log('Game ending condition met');
+        endRound();
+      }
+    }
+  };
+
   // AI turn logic
   useEffect(() => {
-    if (gameState.gamePhase === 'aiTurn') {
+    if (gameState.gamePhase === 'aiTurn' && gameState.trucoState !== 'aiCalled') {
       handleAITurn();
     }
-  }, [gameState.gamePhase, gameState.aiThinking, handleAITurn]);
+  }, [gameState.gamePhase, gameState.aiThinking, handleAITurn, gameState.trucoState]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-green-800 p-4">
@@ -333,6 +462,10 @@ export default function Home() {
           playerPlayedCard={gameState.playerPlayedCard}
           aiPlayedCard={gameState.aiPlayedCard}
           onPlayerCardSelect={handlePlayerCardSelect}
+          onTruco={handleTruco}
+          onTrucoResponse={handleTrucoResponse}
+          trucoState={gameState.trucoState}
+          gamePhase={gameState.gamePhase}
         />
       </div>
       

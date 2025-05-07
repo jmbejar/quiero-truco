@@ -8,6 +8,10 @@ interface GameBoardProps {
   playerPlayedCard?: CardProps | null;
   aiPlayedCard?: CardProps | null;
   onPlayerCardSelect?: (index: number) => void;
+  onTruco?: () => void;
+  onTrucoResponse?: (accept: boolean) => void;
+  trucoState: 'none' | 'playerCalled' | 'aiCalled' | 'accepted' | 'rejected';
+  gamePhase: string;
 }
 
 const GameBoard: React.FC<GameBoardProps> = ({ 
@@ -16,7 +20,11 @@ const GameBoard: React.FC<GameBoardProps> = ({
   middleCard,
   playerPlayedCard,
   aiPlayedCard,
-  onPlayerCardSelect 
+  onPlayerCardSelect,
+  onTruco,
+  onTrucoResponse,
+  trucoState,
+  gamePhase
 }) => {
   return (
     <div className="flex flex-col items-center justify-between h-full w-full">
@@ -65,16 +73,46 @@ const GameBoard: React.FC<GameBoardProps> = ({
       </div>
 
       {/* Bottom row of cards (player) - clickable */}
-      <div className="flex justify-center gap-4 w-full">
-        {bottomCards.map((card, index) => (
-          <div 
-            key={`bottom-${index}`}
-            onClick={() => onPlayerCardSelect && onPlayerCardSelect(index)}
-            className={onPlayerCardSelect ? "cursor-pointer transform hover:scale-105 hover:-translate-y-2 transition-transform" : ""}
+      <div className="flex flex-col items-center gap-4 w-full">
+        <div className="flex justify-center gap-4 w-full">
+          {bottomCards.map((card, index) => (
+            <div 
+              key={`bottom-${index}`}
+              onClick={() => onPlayerCardSelect && onPlayerCardSelect(index)}
+              className={onPlayerCardSelect ? "cursor-pointer transform hover:scale-105 hover:-translate-y-2 transition-transform" : ""}
+            >
+              <Card number={card.number} palo={card.palo} />
+            </div>
+          ))}
+        </div>
+        
+        {/* Truco button */}
+        {gamePhase === 'playerTurn' && trucoState === 'none' && (
+          <button
+            onClick={onTruco}
+            className="mt-4 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-full transform hover:scale-105 transition-transform"
           >
-            <Card number={card.number} palo={card.palo} />
+            ¡Quiero Truco!
+          </button>
+        )}
+
+        {/* Truco response buttons */}
+        {trucoState === 'aiCalled' && onTrucoResponse && (
+          <div className="mt-4 flex gap-4">
+            <button
+              onClick={() => onTrucoResponse(true)}
+              className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-full transform hover:scale-105 transition-transform"
+            >
+              Quiero
+            </button>
+            <button
+              onClick={() => onTrucoResponse(false)}
+              className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-full transform hover:scale-105 transition-transform"
+            >
+              No Quiero
+            </button>
           </div>
-        ))}
+        )}
       </div>
     </div>
   );

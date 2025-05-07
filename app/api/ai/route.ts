@@ -12,9 +12,9 @@ export async function POST(request: Request) {
   
   try {
     const body = await request.json();
-    const { playerPlayedCard, opponentCards, middleCard, gameState, playedCards } = body;
+    const { playerPlayedCard, opponentCards, middleCard, gameState, trucoState, playedCards } = body;
     
-    console.log('Request body:', { playerPlayedCard, opponentCards, middleCard, gameState, playedCards });
+    console.log('Request body:', { playerPlayedCard, opponentCards, middleCard, gameState, trucoState, playedCards });
     console.log('OpenAI API Key available:', !!process.env.OPENAI_API_KEY);
 
     // Check if API key is missing
@@ -37,6 +37,7 @@ export async function POST(request: Request) {
       Estás jugando Truco Uruguayo con muestra. Aquí está el estado actual del juego:
       
       Recuerda que el objetivo es ganar la ronda (dos turnos) así que puede convenir o no jugar la carta más fuerte.
+      ${gameState !== 'accepted' ? 'A su vez, debes intentar decir truco si es que te conviene, porque asigna más puntos y tu objetivo es ganar todos los puntos posibles.' : ''}
 
       Te recordaré como se define qué carta gana en cada ronda. Se compara según el valor de las cartas, que es el siguiente (en orden de fuerza decreciente):
       - El 2, 4, 5, 10 y 11 con el mismo palo que la carta de la muestra son las más fuertes en ese orden.
@@ -66,15 +67,15 @@ export async function POST(request: Request) {
       
       Estado del juego: ${gameState || 'Reparto inicial'}
       
-      Basado en esta información, ¿qué carta jugarías y por qué?
+      Basado en esta información, ¿qué carta jugarías y por qué?${trucoState !== 'accepted' ? ' También debes decidir si quieres decir "Truco" o no.' : ''}
       Responde con un objeto JSON que contenga:
       1. La carta que quieres jugar (índice de la carta en tu mano, 0-2)
-      2. Una breve explicación de tu estrategia. Revisa tu explicación y asegúrate de que respete el valor de las cartas y las reglas del juego.
+      2. Una breve explicación de tu estrategia${trucoState !== 'accepted' ? '\\n      3. Si quieres decir "Truco" o no (wantsTruco: true/false)' : ''}
       
       Ejemplo de respuesta:
       {
         "cardIndex": 1,
-        "explanation": "Estoy jugando el 7 de oro porque es una carta fuerta que puede ganar esta ronda."
+        "explanation": "Estoy jugando el 7 de oro porque es una carta fuerte que puede ganar esta ronda."${trucoState !== 'accepted' ? ',\\n        "wantsTruco": true' : ''}
       }
     `;
 
