@@ -6,12 +6,13 @@ interface AIDecision {
 }
 
 export async function getAIDecision(
-  playerCards: CardProps[],
+  playerPlayedCard: CardProps | null,
   opponentCards: CardProps[],
   middleCard: CardProps,
-  gameState: string = 'Initial deal'
+  gameState: string = 'Initial deal',
+  playedCards: CardProps[] = []
 ): Promise<AIDecision> {
-  console.log('getAIDecision called with:', { playerCards, opponentCards, middleCard, gameState });
+  console.log('getAIDecision called with:', { playerPlayedCard, opponentCards, middleCard, gameState, playedCards });
   
   try {
     console.log('Sending request to /api/ai');
@@ -21,10 +22,11 @@ export async function getAIDecision(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        playerCards,
+        playerPlayedCard,
         opponentCards,
         middleCard,
         gameState,
+        playedCards
       }),
     });
 

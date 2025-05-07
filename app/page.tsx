@@ -89,17 +89,19 @@ export default function Home() {
     try {
       // Get AI decision
       console.log('Calling getAIDecision with:', {
-        bottomCards: gameState.bottomCards,
+        playerPlayedCard: gameState.playerPlayedCard,
         topCards: gameState.topCards,
         muestraCard: gameState.muestraCard,
-        gamePhase: gameState.gamePhase
+        gamePhase: gameState.gamePhase,
+        playedCards: gameState.playedCards
       });
       
       const aiDecision = await getAIDecision(
-        gameState.bottomCards,
+        gameState.playerPlayedCard,
         gameState.topCards,
         gameState.muestraCard,
-        gameState.gamePhase
+        gameState.gamePhase,
+        gameState.playedCards
       );
       
       console.log('AI decision received:', aiDecision);

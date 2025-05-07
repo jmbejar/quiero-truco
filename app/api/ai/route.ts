@@ -12,9 +12,9 @@ export async function POST(request: Request) {
   
   try {
     const body = await request.json();
-    const { playerCards, opponentCards, middleCard, gameState } = body;
+    const { playerPlayedCard, opponentCards, middleCard, gameState, playedCards } = body;
     
-    console.log('Request body:', { playerCards, opponentCards, middleCard, gameState });
+    console.log('Request body:', { playerPlayedCard, opponentCards, middleCard, gameState, playedCards });
     console.log('OpenAI API Key available:', !!process.env.OPENAI_API_KEY);
 
     // Check if API key is missing
@@ -34,23 +34,47 @@ export async function POST(request: Request) {
 
     // Create a prompt that describes the current game state
     const prompt = `
-      You are playing Truco Uruguayo and we expect you know the rules. Here's the current game state:
+      Estás jugando Truco Uruguayo con muestra. Aquí está el estado actual del juego:
       
-      Your cards (opponent): ${JSON.stringify(opponentCards)}
-      Middle card ("la muestra"): ${JSON.stringify(middleCard)}
-      Player's visible cards: ${JSON.stringify(playerCards)}
+      Recuerda que el objetivo es ganar la ronda (dos turnos) así que puede convenir o no jugar la carta más fuerte.
+
+      Te recordaré como se define qué carta gana en cada ronda. Se compara según el valor de las cartas, que es el siguiente (en orden de fuerza decreciente):
+      - El 2, 4, 5, 10 y 11 con el mismo palo que la carta de la muestra son las más fuertes en ese orden.
+      - Cartas especiales ("matas"): El 1 de espada, el 1 de basto, el 7 de espada y el 7 de oro, en ese orden.
+      - 3 de cualquier palo
+      - 2 de cualquier palo
+      - 1 de cualquier palo
+      - El resto de las cartas según su valor nominal
+
+      Ejemplos (con el 3 de oro como carta de la muestra):
+      - 3 de basto gana a 2 de basto (porque el 3 es más fuerte que el 2)
+      - 1 de espada gana a 3 de basto (porque el 1 de espada es una "mata" y el 3 de basto no)
+      - 7 de oro pierde con el 1 de espada (porque ambas son "matas" pero el 1 de espada es más fuerte que el 7 de oro)
+      - 5 de oro gana a 3 de basto (porque este 5 tiene el mismo palo que la carta de la muestra, y es uno de los valores que se activa con la muestra y está en la categoría más fuerte)
+      - 4 de oro gana a 11 de espada (porque este 4 tiene el mismo palo que la carta de la muestra, y es uno de los valores que se activa con la muestra y está en la categoría más fuerte)
+      - 6 de oro pierde con 10 de copa (porque si bien el 6 tiene el mismo palo que la carta de la muestra, no es uno de los valores que se activa con la muestra, entonces se toma su valor nominal)
+
+      Tus cartas (oponente): ${JSON.stringify(opponentCards)}
+      La muestra es: ${JSON.stringify(middleCard)}
+      Carta jugada por el oponente: ${JSON.stringify(playerPlayedCard)}
       
-      Game state: ${gameState || 'Initial deal'}
+      Historial de manos en esta ronda:
+      ${playedCards.length > 0 ? playedCards.map((card: CardProps, index: number) => {
+        const isPlayerCard = index % 2 === 0;
+        return `Mano ${Math.floor(index/2) + 1}: ${isPlayerCard ? 'Jugador' : 'AI'} jugó ${JSON.stringify(card)}`;
+      }).join('\n') : 'No se han jugado manos en esta ronda'}
       
-      Based on this information, what card would you play next and why? 
-      Respond with a JSON object containing:
-      1. The card you want to play (index of the card in your hand, 0-2)
-      2. A brief explanation of your strategy
+      Estado del juego: ${gameState || 'Reparto inicial'}
       
-      Example response:
+      Basado en esta información, ¿qué carta jugarías y por qué?
+      Responde con un objeto JSON que contenga:
+      1. La carta que quieres jugar (índice de la carta en tu mano, 0-2)
+      2. Una breve explicación de tu estrategia. Revisa tu explicación y asegúrate de que respete el valor de las cartas y las reglas del juego.
+      
+      Ejemplo de respuesta:
       {
         "cardIndex": 1,
-        "explanation": "I'm playing the 7 of oro because it's a strong card that can win this round."
+        "explanation": "Estoy jugando el 7 de oro porque es una carta fuerta que puede ganar esta ronda."
       }
     `;
 
@@ -60,7 +84,7 @@ export async function POST(request: Request) {
       // Call OpenAI API
       const completion = await openai.chat.completions.create({
         messages: [{ role: 'user', content: prompt }],
-        model: 'gpt-4o-mini',
+        model: 'gpt-4o',
         response_format: { type: 'json_object' },
       });
 
