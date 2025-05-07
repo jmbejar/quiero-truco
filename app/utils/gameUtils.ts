@@ -48,7 +48,7 @@ export const determineWinner = (playerCard: CardProps, aiCard: CardProps, muestr
 
   // If both cards are envido, higher number wins
   if (playerIsEnvido && aiIsEnvido) {
-    return CARD_VALUES[playerCard.number] > CARD_VALUES[aiCard.number];
+    return CARD_VALUES[playerCard.number] < CARD_VALUES[aiCard.number];
   }
 
   // If neither is envido, check for special cards

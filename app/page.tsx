@@ -16,7 +16,7 @@ export default function Home() {
     aiPlayedCard: CardProps | null;
     deck: CardProps[];
     playedCards: CardProps[];
-    gamePhase: 'initial' | 'playerTurn' | 'aiTurn' | 'roundEnd';
+    gamePhase: 'initial' | 'playerTurn' | 'aiTurn' | 'roundEnd' | 'showingPlayedCards';
     message: string;
     aiThinking: boolean;
     playerWins: number;
@@ -24,6 +24,8 @@ export default function Home() {
     resultHistory: ('win' | 'lose')[];
     playerScore: number;
     aiScore: number;
+    playerStartsRound: boolean;
+    lastTurnWinner: 'player' | 'ai' | null;
   }>({
     topCards: [],
     bottomCards: [],
@@ -39,7 +41,9 @@ export default function Home() {
     aiWins: 0,
     resultHistory: [],
     playerScore: 0,
-    aiScore: 0
+    aiScore: 0,
+    playerStartsRound: Math.random() < 0.5,
+    lastTurnWinner: null
   });
 
   // Initialize the game when the component mounts
@@ -64,14 +68,16 @@ export default function Home() {
       aiPlayedCard: null,
       deck: remainingDeck,
       playedCards: [],
-      gamePhase: 'playerTurn',
-      message: 'Your turn! Select a card to play.',
-      aiThinking: false,
+      gamePhase: prev.playerStartsRound ? 'playerTurn' : 'aiTurn',
+      message: prev.playerStartsRound ? 'Your turn! Select a card to play.' : 'AI is thinking...',
+      aiThinking: !prev.playerStartsRound,
       playerWins: 0,
       aiWins: 0,
       resultHistory: [],
       playerScore: prev.playerScore,
-      aiScore: prev.aiScore
+      aiScore: prev.aiScore,
+      playerStartsRound: !prev.playerStartsRound,
+      lastTurnWinner: null
     }));
   };
 
@@ -83,6 +89,75 @@ export default function Home() {
       message: 'Game Over! No more cards.'
     }));
   }, []);
+
+  const handleNextTurn = () => {
+    setGameState(prev => {
+      // If this is the first turn in the round, use playerStartsRound
+      // Otherwise, use lastTurnWinner to determine who plays first
+      const isFirstTurnInRound = prev.playedCards.length === 0;
+      const playerPlaysFirst = isFirstTurnInRound 
+        ? prev.playerStartsRound 
+        : prev.lastTurnWinner === 'player';
+
+      return {
+        ...prev,
+        playerPlayedCard: null,
+        aiPlayedCard: null,
+        gamePhase: playerPlaysFirst ? 'playerTurn' : 'aiTurn',
+        message: playerPlaysFirst ? 'Your turn! Select a card to play.' : 'AI is thinking...',
+        aiThinking: !playerPlaysFirst
+      };
+    });
+  };
+
+  const handlePlayerCardSelect = (index: number) => {
+    if (gameState.gamePhase !== 'playerTurn') return;
+
+    // Get the selected card and remove it from player's hand
+    const selectedCard = gameState.bottomCards[index];
+    const updatedBottomCards = [...gameState.bottomCards];
+    updatedBottomCards.splice(index, 1);
+
+    setGameState(prev => {
+      // If AI has already played, determine the winner
+      if (prev.aiPlayedCard) {
+        const playerWon = determineWinner(selectedCard, prev.aiPlayedCard, prev.muestraCard);
+        const newResultHistory: ('win' | 'lose')[] = [...prev.resultHistory, playerWon ? 'win' : 'lose'];
+        const playerWinsInRound = newResultHistory.filter(result => result === 'win').length;
+        const aiWinsInRound = newResultHistory.filter(result => result === 'lose').length;
+        const roundEnded = playerWinsInRound >= 2 || aiWinsInRound >= 2;
+
+        return {
+          ...prev,
+          bottomCards: updatedBottomCards,
+          playerPlayedCard: selectedCard,
+          playedCards: [...prev.playedCards, selectedCard],
+          gamePhase: roundEnded ? 'roundEnd' : 'showingPlayedCards',
+          message: roundEnded 
+            ? (playerWinsInRound >= 2 ? 'You won the round! +2 points' : 'AI won the round! +2 points')
+            : (playerWon ? 'You won this hand!' : 'AI won this hand!'),
+          aiThinking: false,
+          playerWins: playerWon ? prev.playerWins + 1 : prev.playerWins,
+          aiWins: !playerWon ? prev.aiWins + 1 : prev.aiWins,
+          resultHistory: newResultHistory,
+          playerScore: roundEnded && playerWinsInRound >= 2 ? prev.playerScore + 2 : prev.playerScore,
+          aiScore: roundEnded && aiWinsInRound >= 2 ? prev.aiScore + 2 : prev.aiScore,
+          lastTurnWinner: playerWon ? 'player' : 'ai'
+        };
+      }
+
+      // If AI hasn't played yet, just update the state
+      return {
+        ...prev,
+        bottomCards: updatedBottomCards,
+        playerPlayedCard: selectedCard,
+        playedCards: [selectedCard],
+        gamePhase: 'aiTurn',
+        message: 'AI is thinking...',
+        aiThinking: true
+      };
+    });
+  };
 
   const handleAITurn = useCallback(async () => {
     console.log('AI turn started');
@@ -117,35 +192,48 @@ export default function Home() {
 
         console.log('AI selected card:', selectedCard, 'at index:', cardIndex);
         
-        // Determine winner of the round
-        const playerWon = determineWinner(gameState.playerPlayedCard!, selectedCard, gameState.muestraCard);
-        
         setGameState(prev => {
-          const newResultHistory: ('win' | 'lose')[] = [...prev.resultHistory, playerWon ? 'win' : 'lose'];
-          const playerWinsInRound = newResultHistory.filter(result => result === 'win').length;
-          const aiWinsInRound = newResultHistory.filter(result => result === 'lose').length;
-          const roundEnded = playerWinsInRound >= 2 || aiWinsInRound >= 2;
+          // If player has already played, determine the winner
+          if (prev.playerPlayedCard) {
+            const playerWon = determineWinner(prev.playerPlayedCard, selectedCard, prev.muestraCard);
+            const newResultHistory: ('win' | 'lose')[] = [...prev.resultHistory, playerWon ? 'win' : 'lose'];
+            const playerWinsInRound = newResultHistory.filter(result => result === 'win').length;
+            const aiWinsInRound = newResultHistory.filter(result => result === 'lose').length;
+            const roundEnded = playerWinsInRound >= 2 || aiWinsInRound >= 2;
 
+            return {
+              ...prev,
+              topCards: updatedTopCards,
+              aiPlayedCard: selectedCard,
+              playedCards: [...prev.playedCards, selectedCard],
+              gamePhase: roundEnded ? 'roundEnd' : 'showingPlayedCards',
+              message: roundEnded 
+                ? (playerWinsInRound >= 2 ? 'You won the round! +2 points' : 'AI won the round! +2 points')
+                : (playerWon ? 'You won this hand!' : 'AI won this hand!'),
+              aiThinking: false,
+              playerWins: playerWon ? prev.playerWins + 1 : prev.playerWins,
+              aiWins: !playerWon ? prev.aiWins + 1 : prev.aiWins,
+              resultHistory: newResultHistory,
+              playerScore: roundEnded && playerWinsInRound >= 2 ? prev.playerScore + 2 : prev.playerScore,
+              aiScore: roundEnded && aiWinsInRound >= 2 ? prev.aiScore + 2 : prev.aiScore,
+              lastTurnWinner: playerWon ? 'player' : 'ai'
+            };
+          }
+
+          // If player hasn't played yet, just update the state
           return {
             ...prev,
             topCards: updatedTopCards,
             aiPlayedCard: selectedCard,
-            playedCards: [...prev.playedCards, selectedCard],
-            gamePhase: roundEnded ? 'roundEnd' : 'playerTurn',
-            message: roundEnded 
-              ? (playerWinsInRound >= 2 ? 'You won the round! +2 points' : 'AI won the round! +2 points')
-              : `AI played a card. ${aiDecision.explanation}. Your turn!`,
-            aiThinking: false,
-            playerWins: playerWon ? prev.playerWins + 1 : prev.playerWins,
-            aiWins: !playerWon ? prev.aiWins + 1 : prev.aiWins,
-            resultHistory: newResultHistory,
-            playerScore: roundEnded && playerWinsInRound >= 2 ? prev.playerScore + 2 : prev.playerScore,
-            aiScore: roundEnded && aiWinsInRound >= 2 ? prev.aiScore + 2 : prev.aiScore
+            playedCards: [selectedCard],
+            gamePhase: 'playerTurn',
+            message: `AI played a card. ${aiDecision.explanation}. Your turn!`,
+            aiThinking: false
           };
         });
 
         // Check if game should end (no more cards)
-        if (updatedTopCards.length === 0 || gameState.bottomCards.length === 0) {
+        if (updatedTopCards.length === 0 && gameState.bottomCards.length === 0) {
           console.log('Game ending condition met');
           endRound();
         }
@@ -161,30 +249,43 @@ export default function Home() {
 
       console.log('AI fallback: selected random card at index:', randomIndex);
       
-      // Determine winner of the round
-      const playerWon = determineWinner(gameState.playerPlayedCard!, selectedCard, gameState.muestraCard);
-      
       setGameState(prev => {
-        const newResultHistory: ('win' | 'lose')[] = [...prev.resultHistory, playerWon ? 'win' : 'lose'];
-        const playerWinsInRound = newResultHistory.filter(result => result === 'win').length;
-        const aiWinsInRound = newResultHistory.filter(result => result === 'lose').length;
-        const roundEnded = playerWinsInRound >= 2 || aiWinsInRound >= 2;
+        // If player has already played, determine the winner
+        if (prev.playerPlayedCard) {
+          const playerWon = determineWinner(prev.playerPlayedCard, selectedCard, prev.muestraCard);
+          const newResultHistory: ('win' | 'lose')[] = [...prev.resultHistory, playerWon ? 'win' : 'lose'];
+          const playerWinsInRound = newResultHistory.filter(result => result === 'win').length;
+          const aiWinsInRound = newResultHistory.filter(result => result === 'lose').length;
+          const roundEnded = playerWinsInRound >= 2 || aiWinsInRound >= 2;
 
+          return {
+            ...prev,
+            topCards: updatedTopCards,
+            aiPlayedCard: selectedCard,
+            playedCards: [...prev.playedCards, selectedCard],
+            gamePhase: roundEnded ? 'roundEnd' : 'showingPlayedCards',
+            message: roundEnded 
+              ? (playerWinsInRound >= 2 ? 'You won the round! +2 points' : 'AI won the round! +2 points')
+              : (playerWon ? 'You won this hand!' : 'AI won this hand!'),
+            aiThinking: false,
+            playerWins: playerWon ? prev.playerWins + 1 : prev.playerWins,
+            aiWins: !playerWon ? prev.aiWins + 1 : prev.aiWins,
+            resultHistory: newResultHistory,
+            playerScore: roundEnded && playerWinsInRound >= 2 ? prev.playerScore + 2 : prev.playerScore,
+            aiScore: roundEnded && aiWinsInRound >= 2 ? prev.aiScore + 2 : prev.aiScore,
+            lastTurnWinner: playerWon ? 'player' : 'ai'
+          };
+        }
+
+        // If player hasn't played yet, just update the state
         return {
           ...prev,
           topCards: updatedTopCards,
           aiPlayedCard: selectedCard,
-          playedCards: [...prev.playedCards, selectedCard],
-          gamePhase: roundEnded ? 'roundEnd' : 'playerTurn',
-          message: roundEnded 
-            ? (playerWinsInRound >= 2 ? 'You won the round! +2 points' : 'AI won the round! +2 points')
-            : 'AI played a card. Your turn!',
-          aiThinking: false,
-          playerWins: playerWon ? prev.playerWins + 1 : prev.playerWins,
-          aiWins: !playerWon ? prev.aiWins + 1 : prev.aiWins,
-          resultHistory: newResultHistory,
-          playerScore: roundEnded && playerWinsInRound >= 2 ? prev.playerScore + 2 : prev.playerScore,
-          aiScore: roundEnded && aiWinsInRound >= 2 ? prev.aiScore + 2 : prev.aiScore
+          playedCards: [selectedCard],
+          gamePhase: 'playerTurn',
+          message: 'AI played a card. Your turn!',
+          aiThinking: false
         };
       });
     }
@@ -196,26 +297,6 @@ export default function Home() {
       handleAITurn();
     }
   }, [gameState.gamePhase, gameState.aiThinking, handleAITurn]);
-
-  const handlePlayerCardSelect = (index: number) => {
-    if (gameState.gamePhase !== 'playerTurn') return;
-
-    // Get the selected card and remove it from player's hand
-    const selectedCard = gameState.bottomCards[index];
-    const updatedBottomCards = [...gameState.bottomCards];
-    updatedBottomCards.splice(index, 1);
-
-    setGameState(prev => ({
-      ...prev,
-      bottomCards: updatedBottomCards,
-      playerPlayedCard: selectedCard,
-      aiPlayedCard: null, // Reset AI's played card
-      playedCards: [selectedCard], // Reset played cards array
-      gamePhase: 'aiTurn',
-      message: 'AI is thinking...',
-      aiThinking: true
-    }));
-  };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-green-800 p-4">
@@ -262,6 +343,14 @@ export default function Home() {
             className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
           >
             Next Round
+          </button>
+        )}
+        {gameState.gamePhase === 'showingPlayedCards' && (
+          <button 
+            onClick={handleNextTurn}
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+          >
+            Next Turn
           </button>
         )}
       </div>
