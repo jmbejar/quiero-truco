@@ -1,5 +1,6 @@
 import React from 'react';
 import Card, { CardProps } from './Card';
+import { GamePhase, TrucoState } from '../types/game';
 
 interface GameBoardProps {
   topCards: CardProps[];
@@ -10,8 +11,8 @@ interface GameBoardProps {
   onPlayerCardSelect?: (index: number) => void;
   onTruco?: () => void;
   onTrucoResponse?: (accept: boolean) => void;
-  trucoState: 'none' | 'playerCalled' | 'aiCalled' | 'accepted' | 'rejected';
-  gamePhase: string;
+  trucoState: TrucoState;
+  gamePhase: GamePhase;
 }
 
 const GameBoard: React.FC<GameBoardProps> = ({ 
@@ -86,18 +87,40 @@ const GameBoard: React.FC<GameBoardProps> = ({
           ))}
         </div>
         
-        {/* Truco button */}
-        {gamePhase === 'playerTurn' && trucoState === 'none' && (
-          <button
-            onClick={onTruco}
-            className="mt-4 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-full transform hover:scale-105 transition-transform"
-          >
-            ¡Quiero Truco!
-          </button>
+        {/* Truco buttons */}
+        {gamePhase.type === 'HUMAN_TURN' && (
+          <div className="mt-4 flex gap-4">
+            {trucoState.type === 'NONE' && trucoState.lastCaller !== 'human' && (
+              <button
+                onClick={onTruco}
+                className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-full transform hover:scale-105 transition-transform"
+              >
+                Truco
+              </button>
+            )}
+            {trucoState.type === 'ACCEPTED' && trucoState.points === 2 && trucoState.lastCaller !== 'human' && (
+              <button
+                onClick={onTruco}
+                className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-full transform hover:scale-105 transition-transform"
+              >
+                Retruco
+              </button>
+            )}
+            {trucoState.type === 'ACCEPTED' && trucoState.points === 3 && trucoState.lastCaller !== 'human' && (
+              <button
+                onClick={onTruco}
+                className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-full transform hover:scale-105 transition-transform"
+              >
+                Vale 4
+              </button>
+            )}
+          </div>
         )}
 
         {/* Truco response buttons */}
-        {trucoState === 'aiCalled' && onTrucoResponse && (
+        {(trucoState.type === 'AI_TRUCO_CALLED' || 
+          trucoState.type === 'AI_RETRUCO_CALLED' || 
+          trucoState.type === 'AI_VALE4_CALLED') && onTrucoResponse && (
           <div className="mt-4 flex gap-4">
             <button
               onClick={() => onTrucoResponse(true)}

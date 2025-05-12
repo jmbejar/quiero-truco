@@ -1,20 +1,23 @@
 import { CardProps } from '../components/Card';
+import { GamePhase, TrucoState, AvailableTrucoAction } from '../types/game';
 
 export interface AIDecision {
   cardIndex: number;
   explanation: string;
-  wantsTruco?: boolean;
+  wantsTrucoAction?: AvailableTrucoAction;  // specifies which truco action the AI wants to call
 }
 
 export async function getAIDecision(
-  playerPlayedCard: CardProps | null,
-  opponentCards: CardProps[],
-  middleCard: CardProps,
-  gameState: string = 'Initial deal',
-  trucoState: string = 'none',
-  playedCards: CardProps[] = []
-): Promise<AIDecision> {
-  console.log('getAIDecision called with:', { playerPlayedCard, opponentCards, middleCard, gameState, trucoState, playedCards });
+playerPlayedCard: CardProps | null, opponentCards: CardProps[], middleCard: CardProps, gamePhase: GamePhase, trucoState: TrucoState, playedCards: CardProps[] = []): Promise<AIDecision> {
+  console.log('getAIDecision called with:', { playerPlayedCard, opponentCards, middleCard, gamePhase, trucoState, playedCards });
+  
+  // Determine what truco-related actions are available
+  const availableTrucoAction: AvailableTrucoAction = (() => {
+    if (trucoState.type === 'NONE') return { type: 'TRUCO' };
+    if (trucoState.type === 'ACCEPTED' && trucoState.points === 2) return { type: 'RETRUCO' };
+    if (trucoState.type === 'ACCEPTED' && trucoState.points === 3) return { type: 'VALE4' };
+    return { type: 'NONE' };
+  })();
   
   try {
     console.log('Sending request to /api/ai');
@@ -27,9 +30,10 @@ export async function getAIDecision(
         playerPlayedCard,
         opponentCards,
         middleCard,
-        gameState,
-        trucoState,
-        playedCards
+        gamePhase: gamePhase.type,
+        trucoState: trucoState.type,
+        playedCards,
+        availableTrucoAction
       }),
     });
 
