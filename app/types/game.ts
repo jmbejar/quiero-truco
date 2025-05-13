@@ -16,16 +16,12 @@ export type AvailableTrucoAction =
   | { type: 'VALE4' };
 
 // Truco States
-export type TrucoState = 
-  | { type: 'NONE'; lastCaller: 'human' | 'ai' | null }
-  | { type: 'HUMAN_TRUCO_CALLED' }
-  | { type: 'AI_TRUCO_CALLED'; cardIndex: number }
-  | { type: 'HUMAN_RETRUCO_CALLED' }
-  | { type: 'AI_RETRUCO_CALLED'; cardIndex: number }
-  | { type: 'HUMAN_VALE4_CALLED' }
-  | { type: 'AI_VALE4_CALLED'; cardIndex: number }
-  | { type: 'ACCEPTED'; points: 2 | 3 | 4; lastCaller: 'human' | 'ai' }
-  | { type: 'REJECTED'; points: 1 | 2 | 3; lastCaller: 'human' | 'ai' };
+export type TrucoState = {
+  type: 'NONE' | 'CALLED' | 'ACCEPTED' | 'REJECTED';
+  level: 'TRUCO' | 'RETRUCO' | 'VALE4' | null;
+  lastCaller: 'human' | 'ai' | null;
+  cardIndex?: number;  // Only needed when AI calls truco
+};
 
 // Round State
 export type RoundState = {

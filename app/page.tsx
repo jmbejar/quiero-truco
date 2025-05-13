@@ -5,7 +5,7 @@ import GameBoard from './components/GameBoard';
 import { createDeck, dealCards } from './utils/deckUtils';
 import { getAIDecision } from './utils/aiUtils';
 import { determineWinner } from './utils/gameUtils';
-import { AvailableTrucoAction, GameState, TrucoState } from './types/game';
+import { GameState, TrucoState } from './types/game';
 
 export default function Home() {
   const [gameState, setGameState] = useState<GameState>({
@@ -20,7 +20,7 @@ export default function Home() {
     
     // Game phases
     phase: { type: 'INITIAL' },
-    trucoState: { type: 'NONE', lastCaller: null },
+    trucoState: { type: 'NONE', level: null, lastCaller: null },
     roundState: {
       humanStartsRound: Math.random() < 0.5,
       lastTurnWinner: null,
@@ -64,7 +64,7 @@ export default function Home() {
       
       // Game phases
       phase: prev.roundState.humanStartsRound ? { type: 'HUMAN_TURN' } : { type: 'AI_TURN' },
-      trucoState: { type: 'NONE', lastCaller: null },
+      trucoState: { type: 'NONE', level: null, lastCaller: null },
       roundState: {
         humanStartsRound: !prev.roundState.humanStartsRound,
         lastTurnWinner: null,
@@ -128,7 +128,8 @@ export default function Home() {
         const playerWinsInRound = newResultHistory.filter(result => result === 'win').length;
         const aiWinsInRound = newResultHistory.filter(result => result === 'lose').length;
         const roundEnded = playerWinsInRound >= 2 || aiWinsInRound >= 2;
-        const pointsToAward = prev.trucoState.type === 'ACCEPTED' ? 2 : 1;
+        const pointsToAward = prev.trucoState.level === 'VALE4' ? 4 :
+                             prev.trucoState.level === 'RETRUCO' ? 3 : 2;
 
         return {
           ...prev,
@@ -195,30 +196,11 @@ export default function Home() {
         
         // If AI wants to call truco
         if (aiDecision.wantsTrucoAction && aiDecision.wantsTrucoAction.type !== 'NONE') {
-          let trucoState: TrucoState;
-          let message: string;
-
-          switch (aiDecision.wantsTrucoAction.type) {
-            case 'VALE4':
-              trucoState = { type: 'AI_VALE4_CALLED', cardIndex: aiDecision.cardIndex };
-              message = 'AI says: ¡Vale 4! Do you accept?';
-              break;
-            case 'RETRUCO':
-              trucoState = { type: 'AI_RETRUCO_CALLED', cardIndex: aiDecision.cardIndex };
-              message = 'AI says: ¡Retruco! Do you accept?';
-              break;
-            case 'TRUCO':
-              trucoState = { type: 'AI_TRUCO_CALLED', cardIndex: aiDecision.cardIndex };
-              message = 'AI says: ¡Truco! Do you accept?';
-              break;
-            default:
-              return;
-          }
-
+          const level = aiDecision.wantsTrucoAction.type;
           setGameState(prev => ({
             ...prev,
-            trucoState,
-            message,
+            trucoState: { type: 'CALLED', level, lastCaller: 'ai', cardIndex: aiDecision.cardIndex },
+            message: `AI says: ¡${level}! Do you accept?`,
             aiThinking: false
           }));
           return;
@@ -240,7 +222,9 @@ export default function Home() {
             const playerWinsInRound = newResultHistory.filter(result => result === 'win').length;
             const aiWinsInRound = newResultHistory.filter(result => result === 'lose').length;
             const roundEnded = playerWinsInRound >= 2 || aiWinsInRound >= 2;
-            const pointsToAward = prev.trucoState.type === 'ACCEPTED' ? 2 : 1;
+            const pointsToAward = prev.trucoState.type === 'ACCEPTED' && prev.trucoState.level ? 
+              (prev.trucoState.level === 'VALE4' ? 4 :
+               prev.trucoState.level === 'RETRUCO' ? 3 : 2) : 1;
 
             return {
               ...prev,
@@ -301,7 +285,9 @@ export default function Home() {
           const playerWinsInRound = newResultHistory.filter(result => result === 'win').length;
           const aiWinsInRound = newResultHistory.filter(result => result === 'lose').length;
           const roundEnded = playerWinsInRound >= 2 || aiWinsInRound >= 2;
-          const pointsToAward = prev.trucoState.type === 'ACCEPTED' ? 2 : 1;
+          const pointsToAward = prev.trucoState.type === 'ACCEPTED' && prev.trucoState.level ? 
+            (prev.trucoState.level === 'VALE4' ? 4 :
+             prev.trucoState.level === 'RETRUCO' ? 3 : 2) : 1;
 
           return {
             ...prev,
@@ -344,17 +330,17 @@ export default function Home() {
         (gameState.trucoState.type !== 'NONE' && 
          gameState.trucoState.type !== 'ACCEPTED')) return;
 
-    const isRetruco = gameState.trucoState.type === 'ACCEPTED' && gameState.trucoState.points === 2;
-    const isVale4 = gameState.trucoState.type === 'ACCEPTED' && gameState.trucoState.points === 3;
+    const currentLevel = gameState.trucoState.level;
+    const nextLevel = currentLevel === null ? 'TRUCO' :
+                     currentLevel === 'TRUCO' ? 'RETRUCO' :
+                     currentLevel === 'RETRUCO' ? 'VALE4' : null;
+
+    if (!nextLevel) return; // Can't go higher than VALE4
 
     setGameState(prev => ({
       ...prev,
-      trucoState: isVale4 ? { type: 'HUMAN_VALE4_CALLED' } :
-                  isRetruco ? { type: 'HUMAN_RETRUCO_CALLED' } : 
-                  { type: 'HUMAN_TRUCO_CALLED' },
-      message: isVale4 ? 'AI is thinking about Vale 4...' :
-               isRetruco ? 'AI is thinking about Retruco...' :
-               'AI is thinking about Truco...',
+      trucoState: { type: 'CALLED', level: nextLevel, lastCaller: 'human' },
+      message: `AI is thinking about ${nextLevel}...`,
       aiThinking: true
     }));
 
@@ -363,14 +349,18 @@ export default function Home() {
       // For now, randomly accept or reject
       const aiAccepts = Math.random() < 0.5;
       setGameState(prev => {
-        const points = isVale4 ? 4 : isRetruco ? 3 : 2;
-        const rejectedPoints = points - 1 as 1 | 2 | 3;
+        const points = nextLevel === 'VALE4' ? 4 : 
+                      nextLevel === 'RETRUCO' ? 3 : 2;
+        const rejectedPoints = points - 1;
+
         return {
           ...prev,
-          trucoState: aiAccepts ? { type: 'ACCEPTED', points, lastCaller: 'human' } : { type: 'REJECTED', points: rejectedPoints, lastCaller: 'human' },
+          trucoState: aiAccepts 
+            ? { type: 'ACCEPTED', level: nextLevel, lastCaller: 'human' }
+            : { type: 'REJECTED', level: nextLevel, lastCaller: 'human' },
           message: aiAccepts 
-            ? `AI accepted ${isVale4 ? 'Vale 4' : isRetruco ? 'Retruco' : 'Truco'}!` 
-            : `AI rejected ${isVale4 ? 'Vale 4' : isRetruco ? 'Retruco' : 'Truco'}! You get ${rejectedPoints} points!`,
+            ? `AI accepted ${nextLevel}!` 
+            : `AI rejected ${nextLevel}! You get ${rejectedPoints} points!`,
           aiThinking: false,
           // If rejected, end the round and give points to the player
           phase: aiAccepts ? prev.phase : { type: 'ROUND_END' },
@@ -382,26 +372,15 @@ export default function Home() {
 
   const handleTrucoResponse = (accept: boolean) => {
     setGameState(prev => {
+      if (prev.trucoState.type !== 'CALLED' || !prev.trucoState.level) return prev;
+
       if (accept) {
         // If player accepts, continue with AI's turn and play the card
-        if (prev.trucoState.type !== 'AI_TRUCO_CALLED' && 
-            prev.trucoState.type !== 'AI_RETRUCO_CALLED' && 
-            prev.trucoState.type !== 'AI_VALE4_CALLED') {
-          return prev;
-        }
-
-        const cardIndex = Math.min(
-          prev.trucoState.type === 'AI_TRUCO_CALLED' ? prev.trucoState.cardIndex :
-          prev.trucoState.type === 'AI_RETRUCO_CALLED' ? prev.trucoState.cardIndex :
-          prev.trucoState.cardIndex,
-          prev.aiCards.length - 1
-        );
+        const cardIndex = prev.trucoState.cardIndex!;
         const selectedCard = prev.aiCards[cardIndex];
         const updatedAiCards = [...prev.aiCards];
         updatedAiCards.splice(cardIndex, 1);
 
-        console.log('AI selected card:', selectedCard, 'at index:', cardIndex);
-        
         if (prev.humanPlayedCard) {
           const playerWon = determineWinner(prev.humanPlayedCard, selectedCard, prev.muestraCard);
           const newResultHistory: ('win' | 'lose')[] = [...prev.roundState.resultHistory, playerWon ? 'win' : 'lose'];
@@ -409,10 +388,9 @@ export default function Home() {
           const aiWinsInRound = newResultHistory.filter(result => result === 'lose').length;
           const roundEnded = playerWinsInRound >= 2 || aiWinsInRound >= 2;
           
-          // Determine points based on truco state
-          const pointsToAward = prev.trucoState.type === 'AI_VALE4_CALLED' ? 4 :
-                               prev.trucoState.type === 'AI_RETRUCO_CALLED' ? 3 :
-                               prev.trucoState.type === 'AI_TRUCO_CALLED' ? 2 : 1;
+          // Points are derived from the level
+          const pointsToAward = prev.trucoState.level === 'VALE4' ? 4 :
+                               prev.trucoState.level === 'RETRUCO' ? 3 : 2;
 
           // Check if game should end (no more cards)
           if (updatedAiCards.length === 0 && prev.humanCards.length === 0) {
@@ -422,7 +400,7 @@ export default function Home() {
 
           return {
             ...prev,
-            trucoState: { type: 'ACCEPTED', points: pointsToAward as 2 | 3 | 4, lastCaller: 'ai' },
+            trucoState: { type: 'ACCEPTED', level: prev.trucoState.level, lastCaller: 'ai' },
             aiCards: updatedAiCards,
             aiPlayedCard: selectedCard,
             playedCards: [...prev.playedCards, selectedCard],
@@ -444,11 +422,9 @@ export default function Home() {
         }
 
         // If player hasn't played yet, just update the state
-        const points = prev.trucoState.type === 'AI_VALE4_CALLED' ? 4 :
-                      prev.trucoState.type === 'AI_RETRUCO_CALLED' ? 3 : 2;
         return {
           ...prev,
-          trucoState: { type: 'ACCEPTED', points: points as 2 | 3 | 4, lastCaller: 'ai' },
+          trucoState: { type: 'ACCEPTED', level: prev.trucoState.level, lastCaller: 'ai' },
           aiCards: updatedAiCards,
           aiPlayedCard: selectedCard,
           playedCards: [selectedCard],
@@ -457,15 +433,13 @@ export default function Home() {
           aiThinking: false
         };
       } else {
-        // If rejected, determine points based on truco state
-        const points = prev.trucoState.type === 'AI_VALE4_CALLED' ? 3 :
-                      prev.trucoState.type === 'AI_RETRUCO_CALLED' ? 2 : 1;
+        // If rejected, determine points based on level
+        const points = prev.trucoState.level === 'VALE4' ? 3 :
+                      prev.trucoState.level === 'RETRUCO' ? 2 : 1;
         return {
           ...prev,
-          trucoState: { type: 'REJECTED', points: points as 1 | 2 | 3, lastCaller: 'ai' },
-          message: `You rejected ${prev.trucoState.type === 'AI_VALE4_CALLED' ? 'Vale 4' : 
-                                   prev.trucoState.type === 'AI_RETRUCO_CALLED' ? 'Retruco' : 
-                                   'Truco'}! AI gets ${points} points.`,
+          trucoState: { type: 'REJECTED', level: prev.trucoState.level, lastCaller: 'ai' },
+          message: `You rejected ${prev.trucoState.level}! AI gets ${points} points.`,
           phase: { type: 'ROUND_END' },
           aiScore: prev.aiScore + points
         };
@@ -475,10 +449,7 @@ export default function Home() {
 
   // AI turn logic
   useEffect(() => {
-    if (gameState.phase.type === 'AI_TURN' && 
-        gameState.trucoState.type !== 'AI_TRUCO_CALLED' && 
-        gameState.trucoState.type !== 'AI_RETRUCO_CALLED' && 
-        gameState.trucoState.type !== 'AI_VALE4_CALLED') {
+    if (gameState.phase.type === 'AI_TURN' && gameState.trucoState.type !== 'CALLED') {
       handleAITurn();
     }
   }, [gameState.phase.type, gameState.aiThinking, handleAITurn, gameState.trucoState.type]);

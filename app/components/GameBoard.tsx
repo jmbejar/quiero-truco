@@ -98,7 +98,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
                 Truco
               </button>
             )}
-            {trucoState.type === 'ACCEPTED' && trucoState.points === 2 && trucoState.lastCaller !== 'human' && (
+            {trucoState.type === 'ACCEPTED' && trucoState.level === 'TRUCO' && trucoState.lastCaller !== 'human' && (
               <button
                 onClick={onTruco}
                 className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-full transform hover:scale-105 transition-transform"
@@ -106,7 +106,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
                 Retruco
               </button>
             )}
-            {trucoState.type === 'ACCEPTED' && trucoState.points === 3 && trucoState.lastCaller !== 'human' && (
+            {trucoState.type === 'ACCEPTED' && trucoState.level === 'RETRUCO' && trucoState.lastCaller !== 'human' && (
               <button
                 onClick={onTruco}
                 className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-full transform hover:scale-105 transition-transform"
@@ -118,9 +118,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
         )}
 
         {/* Truco response buttons */}
-        {(trucoState.type === 'AI_TRUCO_CALLED' || 
-          trucoState.type === 'AI_RETRUCO_CALLED' || 
-          trucoState.type === 'AI_VALE4_CALLED') && onTrucoResponse && (
+        {trucoState.type === 'CALLED' && onTrucoResponse && (
           <div className="mt-4 flex gap-4">
             <button
               onClick={() => onTrucoResponse(true)}
