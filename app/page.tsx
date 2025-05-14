@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import GameBoard from './components/GameBoard';
 import { createDeck, dealCards } from './utils/deckUtils';
 import { getAIDecision } from './utils/aiUtils';
@@ -37,6 +37,11 @@ export default function Home() {
     message: 'Game starting...',
     aiThinking: false
   });
+
+  // Timer and progress for Next Turn button
+  const [nextTurnProgress, setNextTurnProgress] = useState(0);
+  const nextTurnTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const nextTurnAnimationRef = useRef<number | null>(null);
 
   // Initialize the game when the component mounts
   useEffect(() => {
@@ -92,7 +97,7 @@ export default function Home() {
     }));
   }, []);
 
-  const handleNextTurn = () => {
+  const handleNextTurn = useCallback(() => {
     setGameState(prev => {
       // If this is the first turn in the round, use playerStartsRound
       // Otherwise, use lastTurnWinner to determine who plays first
@@ -108,9 +113,8 @@ export default function Home() {
         phase: playerPlaysFirst ? { type: 'HUMAN_TURN' } : { type: 'AI_TURN' },
         message: playerPlaysFirst ? 'Your turn! Select a card to play.' : 'AI is thinking...',
         aiThinking: !playerPlaysFirst
-      };
-    });
-  };
+      }});
+    }, []);
 
   const handlePlayerCardSelect = (index: number) => {
     if (gameState.phase.type !== 'HUMAN_TURN') return;
@@ -454,6 +458,49 @@ export default function Home() {
     }
   }, [gameState.phase.type, gameState.aiThinking, handleAITurn, gameState.trucoState.type]);
 
+  // Timer and progress for Next Turn button
+  useEffect(() => {
+    if (gameState.phase.type === 'SHOWING_PLAYED_CARDS') {
+      setNextTurnProgress(0);
+      const start = performance.now();
+      const duration = 3000.0;
+
+      const animate = (now: number) => {
+        const elapsed = now - start;
+        const progress = Math.min(elapsed / duration, 1.0);
+        setNextTurnProgress(progress);
+        if (progress < 1) {
+          nextTurnAnimationRef.current = requestAnimationFrame(animate);
+        }
+      };
+      nextTurnAnimationRef.current = requestAnimationFrame(animate);
+
+      nextTurnTimeoutRef.current = setTimeout(() => {
+        handleNextTurn();
+      }, duration);
+    } else {
+      setNextTurnProgress(0);
+      if (nextTurnTimeoutRef.current) {
+        clearTimeout(nextTurnTimeoutRef.current);
+        nextTurnTimeoutRef.current = null;
+      }
+      if (nextTurnAnimationRef.current) {
+        cancelAnimationFrame(nextTurnAnimationRef.current);
+        nextTurnAnimationRef.current = null;
+      }
+    }
+    return () => {
+      if (nextTurnTimeoutRef.current) {
+        clearTimeout(nextTurnTimeoutRef.current);
+        nextTurnTimeoutRef.current = null;
+      }
+      if (nextTurnAnimationRef.current) {
+        cancelAnimationFrame(nextTurnAnimationRef.current);
+        nextTurnAnimationRef.current = null;
+      }
+    };
+  }, [gameState.phase.type, handleNextTurn]);
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-green-600">
       <h1 className="text-3xl font-bold text-white m-4">Quiero Truco</h1>
@@ -508,7 +555,17 @@ export default function Home() {
             {gameState.phase.type === 'SHOWING_PLAYED_CARDS' && (
               <button 
                 onClick={handleNextTurn}
-                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full"
+                style={{
+                  background: `linear-gradient(
+                    to right,
+                    rgb(191,219,254) 0%,
+                    rgb(191,219,254) ${Math.round(nextTurnProgress * 100)}%,
+                    rgb(59,130,246) ${Math.round(nextTurnProgress * 100)}%,
+                    rgb(59,130,246) 100%
+                  )`,
+                  transition: 'background 0.2s linear'
+                }}
+                className="hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full"
               >
                 Next Turn
               </button>
