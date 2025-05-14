@@ -1,7 +1,7 @@
-import React from 'react';
-import Image from 'next/image';
+import React from "react";
+import Image from "next/image";
 
-export type Palo = 'oro' | 'basto' | 'espada' | 'copa';
+export type Palo = "oro" | "basto" | "espada" | "copa";
 
 export interface CardProps {
   number: number;
@@ -21,27 +21,15 @@ const Card: React.FC<CardProps> = ({ number, palo, faceDown = false }) => {
     );
   }
 
-  // Check if we have an image for this card
-  const hasImage = [12, 11, 10, 1].includes(number);
-
-  if (hasImage) {
-    return (
-      <div className="w-24 h-36 relative">
-        <Image
-          src={`/naipes/${number} ${palo}.png`}
-          alt={`${number} de ${palo}`}
-          fill
-          className="object-contain"
-          sizes="96px"
-        />
-      </div>
-    );
-  }
-
   return (
-    <div className="flex flex-col items-center justify-center w-24 h-36 bg-white border-2 border-gray-300 rounded-lg shadow-md">
-      <div className="text-2xl font-bold">{number}</div>
-      <div className="text-sm mt-2">{palo}</div>
+    <div className="w-24 h-36 relative">
+      <Image
+        src={`/naipes/${number} ${palo}.png`}
+        alt={`${number} de ${palo}`}
+        fill
+        className="object-contain"
+        sizes="96px"
+      />
     </div>
   );
 };
