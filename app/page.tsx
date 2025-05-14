@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import GameBoard from './components/GameBoard';
 import { createDeck, dealCards } from './utils/deckUtils';
-import { getAIDecision } from './utils/aiUtils';
+import { getAIDecision, getTrucoOfferAIDecision } from './utils/aiUtils';
 import { determineWinner } from './utils/gameUtils';
 import { GameState } from './types/game';
 
@@ -329,7 +329,7 @@ export default function Home() {
     }
   }, [gameState, setGameState, endRound]);
 
-  const handleTruco = () => {
+  const handleTruco = async () => {
     if (gameState.phase.type !== 'HUMAN_TURN' || 
         (gameState.trucoState.type !== 'NONE' && 
          gameState.trucoState.type !== 'ACCEPTED')) return;
@@ -348,30 +348,35 @@ export default function Home() {
       aiThinking: true
     }));
 
-    // Simulate AI thinking about truco/retruco/vale4
-    setTimeout(() => {
-      // For now, randomly accept or reject
-      const aiAccepts = Math.random() < 0.5;
-      setGameState(prev => {
-        const points = nextLevel === 'VALE4' ? 4 : 
-                      nextLevel === 'RETRUCO' ? 3 : 2;
-        const rejectedPoints = points - 1;
+    // Call OpenAI to decide if AI accepts or rejects the truco offer
+    const aiDecision = await getTrucoOfferAIDecision(
+      gameState.aiCards,
+      gameState.humanCards,
+      gameState.muestraCard,
+      nextLevel,
+      gameState.playedCards,
+      gameState.roundState
+    );
 
-        return {
-          ...prev,
-          trucoState: aiAccepts 
-            ? { type: 'ACCEPTED', level: nextLevel, lastCaller: 'HUMAN' }
-            : { type: 'REJECTED', level: nextLevel, lastCaller: 'HUMAN' },
-          message: aiAccepts 
-            ? `AI accepted ${nextLevel}!` 
-            : `AI rejected ${nextLevel}! You get ${rejectedPoints} points!`,
-          aiThinking: false,
-          // If rejected, end the round and give points to the player
-          phase: aiAccepts ? prev.phase : { type: 'ROUND_END' },
-          humanScore: aiAccepts ? prev.humanScore : prev.humanScore + rejectedPoints
-        };
-      });
-    }, 1500);
+    setGameState(prev => {
+      const points = nextLevel === 'VALE4' ? 4 : 
+                    nextLevel === 'RETRUCO' ? 3 : 2;
+      const rejectedPoints = points - 1;
+
+      return {
+        ...prev,
+        trucoState: aiDecision.accept 
+          ? { type: 'ACCEPTED', level: nextLevel, lastCaller: 'HUMAN' }
+          : { type: 'REJECTED', level: nextLevel, lastCaller: 'HUMAN' },
+        message: aiDecision.accept
+          ? `AI accepted ${nextLevel}!`
+          : `AI rejected ${nextLevel}! You get ${rejectedPoints} points!`,
+        aiThinking: false,
+        // If rejected, end the round and give points to the player
+        phase: aiDecision.accept ? prev.phase : { type: 'ROUND_END' },
+        humanScore: aiDecision.accept ? prev.humanScore : prev.humanScore + rejectedPoints
+      };
+    });
   };
 
   const handleTrucoResponse = (accept: boolean) => {

@@ -1,10 +1,15 @@
 import { CardProps } from '../components/Card';
-import { GamePhase, TrucoState, AvailableTrucoAction } from '../types/game';
+import { GamePhase, TrucoState, AvailableTrucoAction, RoundState } from '../types/game';
 
 export interface AIDecision {
   cardIndex: number;
   explanation: string;
   wantsTrucoAction?: AvailableTrucoAction;  // specifies which truco action the AI wants to call
+}
+
+export interface TrucoOfferAIDecision {
+  accept: boolean;
+  explanation: string;
 }
 
 export async function getAIDecision(
@@ -62,5 +67,46 @@ playerPlayedCard: CardProps | null, opponentCards: CardProps[], middleCard: Card
     };
     console.log('Using fallback decision:', fallbackDecision);
     return fallbackDecision;
+  }
+}
+
+export async function getTrucoOfferAIDecision(
+  aiCards: CardProps[],
+  humanCards: CardProps[],
+  muestraCard: CardProps,
+  trucoLevel: 'TRUCO' | 'RETRUCO' | 'VALE4',
+  playedCards: CardProps[],
+  roundState: RoundState
+): Promise<TrucoOfferAIDecision> {
+  try {
+    const response = await fetch('/api/ai/truco-offer', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        aiCards,
+        humanCards,
+        muestraCard,
+        trucoLevel,
+        playedCards,
+        roundState,
+      }),
+    });
+    if (!response.ok) {
+      throw new Error('Failed to get truco offer decision');
+    }
+    const data = await response.json();
+    if (!data.decision) {
+      throw new Error('No decision returned from AI API');
+    }
+    return data.decision;
+  } catch (error) {
+    console.error('Error in getTrucoOfferAIDecision:', error);
+    // Fallback: random accept/reject
+    return {
+      accept: Math.random() < 0.5,
+      explanation: 'Random choice due to API error',
+    };
   }
 }
