@@ -1,6 +1,5 @@
 import React from 'react';
 import Card, { CardProps } from './Card';
-import { GamePhase, TrucoState } from '../types/game';
 
 interface GameBoardProps {
   topCards: CardProps[];
@@ -9,10 +8,6 @@ interface GameBoardProps {
   playerPlayedCard?: CardProps | null;
   aiPlayedCard?: CardProps | null;
   onPlayerCardSelect?: (index: number) => void;
-  onTruco?: () => void;
-  onTrucoResponse?: (accept: boolean) => void;
-  trucoState: TrucoState;
-  gamePhase: GamePhase;
 }
 
 const GameBoard: React.FC<GameBoardProps> = ({ 
@@ -21,11 +16,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
   middleCard,
   playerPlayedCard,
   aiPlayedCard,
-  onPlayerCardSelect,
-  onTruco,
-  onTrucoResponse,
-  trucoState,
-  gamePhase
+  onPlayerCardSelect
 }) => {
   return (
     <div className="flex flex-col items-center justify-between h-full w-full">
@@ -86,54 +77,6 @@ const GameBoard: React.FC<GameBoardProps> = ({
             </div>
           ))}
         </div>
-        
-        {/* Truco buttons */}
-        {gamePhase.type === 'HUMAN_TURN' && (
-          <div className="mt-4 flex gap-4">
-            {trucoState.type === 'NONE' && trucoState.lastCaller !== 'human' && (
-              <button
-                onClick={onTruco}
-                className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-full transform hover:scale-105 transition-transform"
-              >
-                Truco
-              </button>
-            )}
-            {trucoState.type === 'ACCEPTED' && trucoState.level === 'TRUCO' && trucoState.lastCaller !== 'human' && (
-              <button
-                onClick={onTruco}
-                className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-full transform hover:scale-105 transition-transform"
-              >
-                Retruco
-              </button>
-            )}
-            {trucoState.type === 'ACCEPTED' && trucoState.level === 'RETRUCO' && trucoState.lastCaller !== 'human' && (
-              <button
-                onClick={onTruco}
-                className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-full transform hover:scale-105 transition-transform"
-              >
-                Vale 4
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Truco response buttons */}
-        {trucoState.type === 'CALLED' && onTrucoResponse && (
-          <div className="mt-4 flex gap-4">
-            <button
-              onClick={() => onTrucoResponse(true)}
-              className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-full transform hover:scale-105 transition-transform"
-            >
-              Quiero
-            </button>
-            <button
-              onClick={() => onTrucoResponse(false)}
-              className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-full transform hover:scale-105 transition-transform"
-            >
-              No Quiero
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );

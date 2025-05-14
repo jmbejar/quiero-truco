@@ -19,7 +19,7 @@ export type AvailableTrucoAction =
 export type TrucoState = {
   type: 'NONE' | 'CALLED' | 'ACCEPTED' | 'REJECTED';
   level: 'TRUCO' | 'RETRUCO' | 'VALE4' | null;
-  lastCaller: 'human' | 'ai' | null;
+  lastCaller: 'HUMAN' | 'AI' | null;
   cardIndex?: number;  // Only needed when AI calls truco
 };
 

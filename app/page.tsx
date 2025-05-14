@@ -5,7 +5,7 @@ import GameBoard from './components/GameBoard';
 import { createDeck, dealCards } from './utils/deckUtils';
 import { getAIDecision } from './utils/aiUtils';
 import { determineWinner } from './utils/gameUtils';
-import { GameState, TrucoState } from './types/game';
+import { GameState } from './types/game';
 
 export default function Home() {
   const [gameState, setGameState] = useState<GameState>({
@@ -88,7 +88,7 @@ export default function Home() {
     setGameState(prev => ({
       ...prev,
       phase: { type: 'ROUND_END' },
-      message: 'Game Over! No more cards.'
+      message: 'Round Over! No more cards.'
     }));
   }, []);
 
@@ -199,7 +199,7 @@ export default function Home() {
           const level = aiDecision.wantsTrucoAction.type;
           setGameState(prev => ({
             ...prev,
-            trucoState: { type: 'CALLED', level, lastCaller: 'ai', cardIndex: aiDecision.cardIndex },
+            trucoState: { type: 'CALLED', level, lastCaller: 'AI', cardIndex: aiDecision.cardIndex },
             message: `AI says: ¡${level}! Do you accept?`,
             aiThinking: false
           }));
@@ -255,7 +255,7 @@ export default function Home() {
             aiPlayedCard: selectedCard,
             playedCards: [selectedCard],
             phase: { type: 'HUMAN_TURN' },
-            message: `AI played a card. ${aiDecision.explanation}. Your turn!`,
+            message: 'AI played a card. Your turn!',
             aiThinking: false
           };
         });
@@ -339,7 +339,7 @@ export default function Home() {
 
     setGameState(prev => ({
       ...prev,
-      trucoState: { type: 'CALLED', level: nextLevel, lastCaller: 'human' },
+      trucoState: { type: 'CALLED', level: nextLevel, lastCaller: 'HUMAN' },
       message: `AI is thinking about ${nextLevel}...`,
       aiThinking: true
     }));
@@ -356,8 +356,8 @@ export default function Home() {
         return {
           ...prev,
           trucoState: aiAccepts 
-            ? { type: 'ACCEPTED', level: nextLevel, lastCaller: 'human' }
-            : { type: 'REJECTED', level: nextLevel, lastCaller: 'human' },
+            ? { type: 'ACCEPTED', level: nextLevel, lastCaller: 'HUMAN' }
+            : { type: 'REJECTED', level: nextLevel, lastCaller: 'HUMAN' },
           message: aiAccepts 
             ? `AI accepted ${nextLevel}!` 
             : `AI rejected ${nextLevel}! You get ${rejectedPoints} points!`,
@@ -400,7 +400,7 @@ export default function Home() {
 
           return {
             ...prev,
-            trucoState: { type: 'ACCEPTED', level: prev.trucoState.level, lastCaller: 'ai' },
+            trucoState: { type: 'ACCEPTED', level: prev.trucoState.level, lastCaller: 'AI' },
             aiCards: updatedAiCards,
             aiPlayedCard: selectedCard,
             playedCards: [...prev.playedCards, selectedCard],
@@ -424,12 +424,12 @@ export default function Home() {
         // If player hasn't played yet, just update the state
         return {
           ...prev,
-          trucoState: { type: 'ACCEPTED', level: prev.trucoState.level, lastCaller: 'ai' },
+          trucoState: { type: 'ACCEPTED', level: prev.trucoState.level, lastCaller: 'AI' },
           aiCards: updatedAiCards,
           aiPlayedCard: selectedCard,
           playedCards: [selectedCard],
           phase: { type: 'HUMAN_TURN' },
-          message: `AI played a card. Your turn!`,
+          message: '',
           aiThinking: false
         };
       } else {
@@ -438,7 +438,7 @@ export default function Home() {
                       prev.trucoState.level === 'RETRUCO' ? 2 : 1;
         return {
           ...prev,
-          trucoState: { type: 'REJECTED', level: prev.trucoState.level, lastCaller: 'ai' },
+          trucoState: { type: 'REJECTED', level: prev.trucoState.level, lastCaller: 'AI' },
           message: `You rejected ${prev.trucoState.level}! AI gets ${points} points.`,
           phase: { type: 'ROUND_END' },
           aiScore: prev.aiScore + points
@@ -455,64 +455,112 @@ export default function Home() {
   }, [gameState.phase.type, gameState.aiThinking, handleAITurn, gameState.trucoState.type]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-green-800 p-4">
-      <h1 className="text-3xl font-bold text-white mb-4">Quiero Truco</h1>
-      
-      <div className="bg-white rounded-lg p-3 mb-4 w-full max-w-4xl">
-        <p className="text-center">{gameState.message}</p>
-        {gameState.roundState.resultHistory.length > 0 && (
-          <div className="text-center text-2xl mt-2">
-            {gameState.roundState.resultHistory.map((result, index) => (
-              <span key={index} className="mx-1">
-                {result === 'win' ? '✅' : '❌'}
-              </span>
-            ))}
+    <div className="flex flex-col items-center justify-center min-h-screen bg-green-600">
+      <h1 className="text-3xl font-bold text-white m-4">Quiero Truco</h1>
+      <div className="flex flex-row w-full h-[90vh] bg-green-800 overflow-hidden">
+        <div className="w-3/4 h-full flex items-center justify-center bg-transparent p-4">
+          <GameBoard 
+            topCards={gameState.aiCards} 
+            bottomCards={gameState.humanCards} 
+            middleCard={gameState.muestraCard}
+            playerPlayedCard={gameState.humanPlayedCard}
+            aiPlayedCard={gameState.aiPlayedCard}
+            onPlayerCardSelect={handlePlayerCardSelect}
+          />
+        </div>
+        <div className="w-1/4 h-full flex flex-col justify-between bg-gray-50 p-6 border-l border-gray-200">
+          <div>
+            <div className="text-lg font-semibold text-gray-800 mb-4 text-center min-h-[48px]">{gameState.message}</div>
+              <div className="flex flex-col items-center gap-2 mb-6">
+                <div className="flex gap-2">
+                  {[0, 1, 2].map((index) => {
+                    const result = gameState.roundState.resultHistory[index];
+                    return (
+                      <span key={index} className="flex items-center gap-1">
+                        <span className={result === 'win' ? 'text-green-600' : result === 'lose' ? 'text-red-600' : 'text-gray-400'}>
+                          {result === 'win' ? '✅' : result === 'lose' ? '❌' : '➖'}
+                        </span>
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            <div className="flex justify-center gap-8 mb-8">
+              <div className="bg-green-100 rounded px-4 py-2 text-center w-24">
+                <p className="font-bold text-green-800">You</p>
+                <p className="text-2xl font-bold text-green-900">{gameState.humanScore}</p>
+              </div>
+              <div className="bg-gray-100 rounded px-4 py-2 text-center w-24">
+                <p className="font-bold text-gray-800">AI</p>
+                <p className="text-2xl font-bold text-gray-900">{gameState.aiScore}</p>
+              </div>
+            </div>
           </div>
-        )}
-        <div className="flex justify-center gap-8 mt-2">
-          <div className="text-center">
-            <p className="font-bold">You</p>
-            <p className="text-2xl">{gameState.humanScore}</p>
-          </div>
-          <div className="text-center">
-            <p className="font-bold">AI</p>
-            <p className="text-2xl">{gameState.aiScore}</p>
+          <div className="flex flex-col gap-4 items-center">
+            {gameState.phase.type === 'ROUND_END' && (
+              <button 
+                onClick={initializeGame}
+                className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full"
+              >
+                Next Round
+              </button>
+            )}
+            {gameState.phase.type === 'SHOWING_PLAYED_CARDS' && (
+              <button 
+                onClick={handleNextTurn}
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full"
+              >
+                Next Turn
+              </button>
+            )}
+            {/* Truco action buttons */}
+            {gameState.phase.type === 'HUMAN_TURN' && (
+              <div className="flex gap-4 w-full justify-center">
+                {gameState.trucoState.type === 'NONE' && gameState.trucoState.lastCaller !== 'HUMAN' && (
+                  <button
+                    onClick={handleTruco}
+                    className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-full w-full"
+                  >
+                    Truco
+                  </button>
+                )}
+                {gameState.trucoState.type === 'ACCEPTED' && gameState.trucoState.level === 'TRUCO' && gameState.trucoState.lastCaller !== 'HUMAN' && (
+                  <button
+                    onClick={handleTruco}
+                    className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-full w-full"
+                  >
+                    Retruco
+                  </button>
+                )}
+                {gameState.trucoState.type === 'ACCEPTED' && gameState.trucoState.level === 'RETRUCO' && gameState.trucoState.lastCaller !== 'HUMAN' && (
+                  <button
+                    onClick={handleTruco}
+                    className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-full w-full"
+                  >
+                    Vale 4
+                  </button>
+                )}
+              </div>
+            )}
+            {/* Truco response buttons */}
+            {gameState.trucoState.type === 'CALLED' && gameState.trucoState.lastCaller === 'AI' && (
+              <div className="flex gap-4 w-full justify-center">
+                <button
+                  onClick={() => handleTrucoResponse(true)}
+                  className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-full w-full"
+                >
+                  Quiero
+                </button>
+                <button
+                  onClick={() => handleTrucoResponse(false)}
+                  className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-full w-full"
+                >
+                  No Quiero
+                </button>
+              </div>
+            )}
           </div>
         </div>
-      </div>
-      
-      <div className="w-full max-w-4xl h-[60vh]">
-        <GameBoard 
-          topCards={gameState.aiCards} 
-          bottomCards={gameState.humanCards} 
-          middleCard={gameState.muestraCard}
-          playerPlayedCard={gameState.humanPlayedCard}
-          aiPlayedCard={gameState.aiPlayedCard}
-          onPlayerCardSelect={handlePlayerCardSelect}
-          onTruco={handleTruco}
-          onTrucoResponse={handleTrucoResponse}
-          trucoState={gameState.trucoState}
-          gamePhase={gameState.phase}
-        />
-      </div>
-      
-      <div className="mt-6 flex gap-4">
-        {gameState.phase.type === 'ROUND_END' && (
-          <button 
-            onClick={initializeGame}
-            className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-          >
-            Next Round
-          </button>
-        )}
-        {gameState.phase.type === 'SHOWING_PLAYED_CARDS' && (
-          <button 
-            onClick={handleNextTurn}
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-          >
-            Next Turn
-          </button>
-        )}
       </div>
     </div>
   );
