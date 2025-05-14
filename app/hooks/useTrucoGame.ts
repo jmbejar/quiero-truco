@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { createDeck, dealCards } from '../utils/deckUtils';
+import { getInitialGameState, getEndRoundState, getNextTurnState, getPlayerCardSelectState } from '../utils/gameLogic';
 import { getAIDecision, getTrucoOfferAIDecision } from '../utils/aiUtils';
 import { determineWinner } from '../utils/gameUtils';
 import { GameState } from '../types/game';
@@ -33,104 +33,19 @@ export function useTrucoGame() {
   const nextTurnAnimationRef = useRef<number | null>(null);
 
   const initializeGame = useCallback(() => {
-    const fullDeck = createDeck();
-    const { topCards, bottomCards, remainingDeck } = dealCards(fullDeck);
-    const muestraIndex = Math.floor(Math.random() * remainingDeck.length);
-    const muestraCard = remainingDeck[muestraIndex];
-    remainingDeck.splice(muestraIndex, 1);
-    setGameState(prev => ({
-      aiCards: topCards,
-      humanCards: bottomCards,
-      muestraCard,
-      humanPlayedCard: null,
-      aiPlayedCard: null,
-      deck: remainingDeck,
-      playedCards: [],
-      phase: prev.roundState.humanStartsRound ? { type: 'HUMAN_TURN' } : { type: 'AI_TURN' },
-      trucoState: { type: 'NONE', level: null, lastCaller: null },
-      roundState: {
-        humanStartsRound: !prev.roundState.humanStartsRound,
-        lastTurnWinner: null,
-        humanWins: 0,
-        aiWins: 0,
-        resultHistory: []
-      },
-      humanScore: prev.humanScore,
-      aiScore: prev.aiScore,
-      message: prev.roundState.humanStartsRound ? 'Your turn! Select a card to play.' : 'AI is thinking...',
-      aiThinking: !prev.roundState.humanStartsRound
-    }));
+    setGameState(prev => getInitialGameState(prev));
   }, []);
 
   const endRound = useCallback(() => {
-    setGameState(prev => ({
-      ...prev,
-      phase: { type: 'ROUND_END' },
-      message: 'Round Over! No more cards.'
-    }));
+    setGameState(prev => getEndRoundState(prev));
   }, []);
 
   const handleNextTurn = useCallback(() => {
-    setGameState(prev => {
-      const isFirstTurnInRound = prev.playedCards.length === 0;
-      const playerPlaysFirst = isFirstTurnInRound 
-        ? prev.roundState.humanStartsRound 
-        : prev.roundState.lastTurnWinner === 'human';
-      return {
-        ...prev,
-        humanPlayedCard: null,
-        aiPlayedCard: null,
-        phase: playerPlaysFirst ? { type: 'HUMAN_TURN' } : { type: 'AI_TURN' },
-        message: playerPlaysFirst ? 'Your turn! Select a card to play.' : 'AI is thinking...',
-        aiThinking: !playerPlaysFirst
-      }});
+    setGameState(prev => getNextTurnState(prev));
   }, []);
 
   const handlePlayerCardSelect = (index: number) => {
-    if (gameState.phase.type !== 'HUMAN_TURN') return;
-    const selectedCard = gameState.humanCards[index];
-    const updatedHumanCards = [...gameState.humanCards];
-    updatedHumanCards.splice(index, 1);
-    setGameState(prev => {
-      if (prev.aiPlayedCard) {
-        const playerWon = determineWinner(selectedCard, prev.aiPlayedCard, prev.muestraCard);
-        const newResultHistory: ('win' | 'lose')[] = [...prev.roundState.resultHistory, playerWon ? 'win' : 'lose'];
-        const playerWinsInRound = newResultHistory.filter(result => result === 'win').length;
-        const aiWinsInRound = newResultHistory.filter(result => result === 'lose').length;
-        const roundEnded = playerWinsInRound >= 2 || aiWinsInRound >= 2;
-        const pointsToAward = prev.trucoState.level === 'VALE4' ? 4 :
-                             prev.trucoState.level === 'RETRUCO' ? 3 : 2;
-        return {
-          ...prev,
-          humanCards: updatedHumanCards,
-          humanPlayedCard: selectedCard,
-          playedCards: [...prev.playedCards, selectedCard],
-          phase: roundEnded ? { type: 'ROUND_END' } : { type: 'SHOWING_PLAYED_CARDS' },
-          message: roundEnded 
-            ? (playerWinsInRound >= 2 ? `You won the round! +${pointsToAward} points` : `AI won the round! +${pointsToAward} points`)
-            : (playerWon ? 'You won this hand!' : 'AI won this hand!'),
-          aiThinking: false,
-          roundState: {
-            ...prev.roundState,
-            humanWins: playerWon ? prev.roundState.humanWins + 1 : prev.roundState.humanWins,
-            aiWins: !playerWon ? prev.roundState.aiWins + 1 : prev.roundState.aiWins,
-            resultHistory: newResultHistory,
-            lastTurnWinner: playerWon ? 'human' : 'ai'
-          },
-          humanScore: roundEnded && playerWinsInRound >= 2 ? prev.humanScore + pointsToAward : prev.humanScore,
-          aiScore: roundEnded && aiWinsInRound >= 2 ? prev.aiScore + pointsToAward : prev.aiScore
-        };
-      }
-      return {
-        ...prev,
-        humanCards: updatedHumanCards,
-        humanPlayedCard: selectedCard,
-        playedCards: [selectedCard],
-        phase: { type: 'AI_TURN' },
-        message: 'AI is thinking...',
-        aiThinking: true
-      };
-    });
+    setGameState(prev => getPlayerCardSelectState(prev, index));
   };
 
   const handleAITurn = useCallback(async () => {
@@ -195,8 +110,8 @@ export function useTrucoGame() {
             aiPlayedCard: selectedCard,
             playedCards: [selectedCard],
             phase: { type: 'HUMAN_TURN' },
-            message: 'AI played a card. Your turn!',
-            aiThinking: false
+            message: 'AI is thinking...',
+            aiThinking: true
           };
         });
         if (updatedAiCards.length === 0 && gameState.humanCards.length === 0) {
