@@ -68,10 +68,12 @@ const GameBoard: React.FC<GameBoardProps> = ({
       <div className="flex flex-col items-center gap-4 w-full">
         <div className="flex justify-center gap-4 w-full">
           {bottomCards.map((card, index) => (
-            <div 
+            <div
               key={`bottom-${index}`}
               onClick={() => onPlayerCardSelect && onPlayerCardSelect(index)}
               className={onPlayerCardSelect ? "cursor-pointer transform hover:scale-105 hover:-translate-y-2 transition-transform" : ""}
+              role={onPlayerCardSelect ? "button" : undefined}
+              tabIndex={onPlayerCardSelect ? 0 : undefined}
             >
               <Card number={card.number} palo={card.palo} />
             </div>
