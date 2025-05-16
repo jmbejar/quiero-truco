@@ -40,7 +40,6 @@ export type GameState = {
   muestraCard: CardProps;
   humanPlayedCard: CardProps | null;
   aiPlayedCard: CardProps | null;
-  deck: CardProps[];
   playedCards: CardProps[];
   
   // Game phases
@@ -54,5 +53,4 @@ export type GameState = {
   
   // UI state
   message: string;
-  aiThinking: boolean;
 }; 

@@ -18,7 +18,6 @@ describe('getInitialGameState', () => {
     expect(state.humanCards).toHaveLength(3);
     expect(state.aiCards).toHaveLength(3);
     expect(state.muestraCard).toBeDefined();
-    expect(state.deck.length).toBe(32);
     expect(state.phase).toBeDefined();
     expect(state.trucoState).toBeDefined();
     expect(state.roundState).toBeDefined();

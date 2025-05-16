@@ -20,7 +20,6 @@ describe('useTrucoGame', () => {
       muestraCard: { number: 1, palo: 'oro' },
       humanPlayedCard: null,
       aiPlayedCard: null,
-      deck: [],
       playedCards: [],
       phase: { type: 'HUMAN_TURN' },
       trucoState: { type: 'NONE', level: null, lastCaller: null },
@@ -34,7 +33,6 @@ describe('useTrucoGame', () => {
       humanScore: 0,
       aiScore: 0,
       message: 'Test',
-      aiThinking: false
     };
     jest.spyOn(gameLogic, 'getInitialGameState').mockImplementation(() => mockInitialState);
     const { result } = renderHook(() => useTrucoGame());

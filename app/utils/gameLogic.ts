@@ -14,7 +14,6 @@ export function getInitialGameState(prev: GameState): GameState {
     muestraCard,
     humanPlayedCard: null,
     aiPlayedCard: null,
-    deck: remainingDeck,
     playedCards: [],
     phase: prev.roundState.humanStartsRound ? { type: 'HUMAN_TURN' } : { type: 'AI_TURN' },
     trucoState: { type: 'NONE', level: null, lastCaller: null },
@@ -28,7 +27,6 @@ export function getInitialGameState(prev: GameState): GameState {
     humanScore: prev.humanScore,
     aiScore: prev.aiScore,
     message: prev.roundState.humanStartsRound ? 'Your turn! Select a card to play.' : 'AI is thinking...',
-    aiThinking: !prev.roundState.humanStartsRound
   };
 }
 
@@ -51,7 +49,6 @@ export function getNextTurnState(prev: GameState): GameState {
     aiPlayedCard: null,
     phase: playerPlaysFirst ? { type: 'HUMAN_TURN' } : { type: 'AI_TURN' },
     message: playerPlaysFirst ? 'Your turn! Select a card to play.' : 'AI is thinking...',
-    aiThinking: !playerPlaysFirst
   };
 }
 
@@ -77,7 +74,6 @@ export function getPlayerCardSelectState(prev: GameState, index: number): GameSt
       message: roundEnded 
         ? (playerWinsInRound >= 2 ? `You won the round! +${pointsToAward} points` : `AI won the round! +${pointsToAward} points`)
         : (playerWon ? 'You won this hand!' : 'AI won this hand!'),
-      aiThinking: false,
       roundState: {
         ...prev.roundState,
         humanWins: playerWon ? prev.roundState.humanWins + 1 : prev.roundState.humanWins,
@@ -96,6 +92,5 @@ export function getPlayerCardSelectState(prev: GameState, index: number): GameSt
     playedCards: [selectedCard],
     phase: { type: 'AI_TURN' },
     message: 'AI is thinking...',
-    aiThinking: true
   };
 } 

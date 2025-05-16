@@ -11,7 +11,6 @@ export function useTrucoGame() {
     muestraCard: { number: 0, palo: 'oro' },
     humanPlayedCard: null,
     aiPlayedCard: null,
-    deck: [],
     playedCards: [],
     phase: { type: 'INITIAL' },
     trucoState: { type: 'NONE', level: null, lastCaller: null },
@@ -24,8 +23,7 @@ export function useTrucoGame() {
     },
     humanScore: 0,
     aiScore: 0,
-    message: 'Game starting...',
-    aiThinking: false
+    message: 'Game starting...'
   });
 
   const [nextTurnProgress, setNextTurnProgress] = useState(0);
@@ -64,8 +62,7 @@ export function useTrucoGame() {
           setGameState(prev => ({
             ...prev,
             trucoState: { type: 'CALLED', level, lastCaller: 'AI', cardIndex: aiDecision.cardIndex },
-            message: `AI says: ¡${level}! Do you accept?`,
-            aiThinking: false
+            message: `AI says: ¡${level}! Do you accept?`
           }));
           return;
         }
@@ -92,7 +89,6 @@ export function useTrucoGame() {
               message: roundEnded 
                 ? (playerWinsInRound >= 2 ? `You won the round! +${pointsToAward} points` : `AI won the round! +${pointsToAward} points`)
                 : (playerWon ? 'You won this hand!' : 'AI won this hand!'),
-              aiThinking: false,
               roundState: {
                 ...prev.roundState,
                 humanWins: playerWon ? prev.roundState.humanWins + 1 : prev.roundState.humanWins,
@@ -110,8 +106,7 @@ export function useTrucoGame() {
             aiPlayedCard: selectedCard,
             playedCards: [selectedCard],
             phase: { type: 'HUMAN_TURN' },
-            message: 'AI is thinking...',
-            aiThinking: true
+            message: "It's your turn"
           };
         });
         if (updatedAiCards.length === 0 && gameState.humanCards.length === 0) {
@@ -142,7 +137,6 @@ export function useTrucoGame() {
             message: roundEnded 
               ? (playerWinsInRound >= 2 ? `You won the round! +${pointsToAward} points` : `AI won the round! +${pointsToAward} points`)
               : (playerWon ? 'You won this hand!' : 'AI won this hand!'),
-            aiThinking: false,
             roundState: {
               ...prev.roundState,
               humanWins: playerWon ? prev.roundState.humanWins + 1 : prev.roundState.humanWins,
@@ -160,8 +154,7 @@ export function useTrucoGame() {
           aiPlayedCard: selectedCard,
           playedCards: [selectedCard],
           phase: { type: 'HUMAN_TURN' },
-          message: 'AI played a card. Your turn!',
-          aiThinking: false
+          message: "It's your turn"
         };
       });
     }
@@ -179,8 +172,7 @@ export function useTrucoGame() {
     setGameState(prev => ({
       ...prev,
       trucoState: { type: 'CALLED', level: nextLevel, lastCaller: 'HUMAN' },
-      message: `AI is thinking about ${nextLevel}...`,
-      aiThinking: true
+      message: `AI is thinking about ${nextLevel}...`
     }));
     const aiDecision = await getTrucoOfferAIDecision(
       gameState.aiCards,
@@ -202,7 +194,6 @@ export function useTrucoGame() {
         message: aiDecision.accept
           ? `AI accepted ${nextLevel}!`
           : `AI rejected ${nextLevel}! You get ${rejectedPoints} points!`,
-        aiThinking: false,
         phase: aiDecision.accept ? prev.phase : { type: 'ROUND_END' },
         humanScore: aiDecision.accept ? prev.humanScore : prev.humanScore + rejectedPoints
       };
@@ -238,7 +229,6 @@ export function useTrucoGame() {
             message: roundEnded 
               ? (playerWinsInRound >= 2 ? `You won the round! +${pointsToAward} points` : `AI won the round! +${pointsToAward} points`)
               : (playerWon ? 'You won this hand!' : 'AI won this hand!'),
-            aiThinking: false,
             roundState: {
               ...prev.roundState,
               humanWins: playerWon ? prev.roundState.humanWins + 1 : prev.roundState.humanWins,
@@ -258,7 +248,6 @@ export function useTrucoGame() {
           playedCards: [selectedCard],
           phase: { type: 'HUMAN_TURN' },
           message: '',
-          aiThinking: false
         };
       } else {
         const points = prev.trucoState.level === 'VALE4' ? 3 :
@@ -278,7 +267,7 @@ export function useTrucoGame() {
     if (gameState.phase.type === 'AI_TURN' && gameState.trucoState.type !== 'CALLED') {
       handleAITurn();
     }
-  }, [gameState.phase.type, gameState.aiThinking, handleAITurn, gameState.trucoState.type]);
+  }, [gameState.phase.type, handleAITurn, gameState.trucoState.type]);
 
   useEffect(() => {
     if (gameState.phase.type === 'SHOWING_PLAYED_CARDS') {
