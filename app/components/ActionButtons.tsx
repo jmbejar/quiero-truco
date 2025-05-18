@@ -24,7 +24,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
     {phase.type === 'ROUND_END' && (
       <button 
         onClick={onNextRound}
-        className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full"
+        className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full cursor-pointer"
       >
         Siguiente Ronda
       </button>
@@ -42,7 +42,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
           )`,
           transition: 'background 0.2s linear'
         }}
-        className="hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full"
+        className="hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full cursor-pointer"
       >
         Siguiente Turno
       </button>
@@ -53,7 +53,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         {trucoState.type === 'NONE' && trucoState.lastCaller !== 'HUMAN' && (
           <button
             onClick={onTruco}
-            className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-full w-full"
+            className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-full w-full cursor-pointer"
           >
             Truco
           </button>
@@ -61,7 +61,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         {trucoState.type === 'ACCEPTED' && trucoState.level === 'TRUCO' && trucoState.lastCaller !== 'HUMAN' && (
           <button
             onClick={onTruco}
-            className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-full w-full"
+            className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-full w-full cursor-pointer"
           >
             Retruco
           </button>
@@ -69,7 +69,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         {trucoState.type === 'ACCEPTED' && trucoState.level === 'RETRUCO' && trucoState.lastCaller !== 'HUMAN' && (
           <button
             onClick={onTruco}
-            className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-full w-full"
+            className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-full w-full cursor-pointer"
           >
             Vale 4
           </button>
@@ -81,13 +81,13 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
       <div className="flex gap-4 w-full justify-center">
         <button
           onClick={() => onTrucoResponse(true)}
-          className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-full w-full"
+          className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-full w-full cursor-pointer"
         >
           Quiero
         </button>
         <button
           onClick={() => onTrucoResponse(false)}
-          className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-full w-full"
+          className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-full w-full cursor-pointer"
         >
           No Quiero
         </button>
