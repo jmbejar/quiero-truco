@@ -18,6 +18,7 @@ playerPlayedCard: CardProps | null, opponentCards: CardProps[], middleCard: Card
   
   // Determine what truco-related actions are available
   const availableTrucoAction: AvailableTrucoAction = (() => {
+    if (trucoState.lastCaller === 'AI') return { type: 'NONE' };
     if (trucoState.type === 'NONE') return { type: 'TRUCO' };
     if (trucoState.type === 'ACCEPTED' && trucoState.level === 'TRUCO') return { type: 'RETRUCO' };
     if (trucoState.type === 'ACCEPTED' && trucoState.level === 'RETRUCO') return { type: 'VALE4' };
