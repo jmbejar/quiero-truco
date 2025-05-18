@@ -295,7 +295,10 @@ export function useTrucoGame() {
         let nextLevel: 'RETRUCO' | 'VALE4' | null = null;
         if (gameState.trucoState.level === 'TRUCO') nextLevel = 'RETRUCO';
         else if (gameState.trucoState.level === 'RETRUCO') nextLevel = 'VALE4';
-        if (!nextLevel) return;
+        if (!nextLevel) {
+          console.error('No next level found');
+          return;
+        }
         const aiDecision = await getTrucoOfferAIDecision(
           gameState.aiCards,
           gameState.humanCards,
@@ -328,10 +331,11 @@ export function useTrucoGame() {
             };
           });
         } else if (aiDecision.action === 'escalate') {
-          let escalateLevel: 'RETRUCO' | 'VALE4' | null = null;
-          if (nextLevel === 'TRUCO') escalateLevel = 'RETRUCO';
-          else if (nextLevel === 'RETRUCO') escalateLevel = 'VALE4';
-          if (!escalateLevel) return;
+          if (nextLevel !== 'RETRUCO') {
+            console.error('Escalation invalid');
+            return;
+          }
+          const escalateLevel = 'VALE4';
           setGameState(prev => ({
             ...prev,
             trucoState: { type: 'CALLED', level: escalateLevel, lastCaller: 'AI' },
