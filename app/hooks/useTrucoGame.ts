@@ -62,7 +62,7 @@ export function useTrucoGame() {
           setGameState(prev => ({
             ...prev,
             trucoState: { type: 'CALLED', level, lastCaller: 'AI', cardIndex: aiDecision.cardIndex },
-            message: `AI says: ¡${level}! Do you accept?`
+            message: `Jugador CPU te canta: ¡${level}! ¿Aceptás?`
           }));
           return;
         }
