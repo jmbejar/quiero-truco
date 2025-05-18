@@ -14,12 +14,14 @@ export async function POST(request: Request) {
       return NextResponse.json({
         error: 'OpenAI API key is missing',
         decision: {
-          accept: Math.random() < 0.5,
+          action: Math.random() < 0.5 ? 'accept' : 'reject',
           explanation: 'Random choice (API key missing)'
         }
       }, { status: 200 });
     }
 
+    const canEscalate = trucoLevel === 'TRUCO' || trucoLevel === 'RETRUCO';
+    const nextLevel = trucoLevel === 'TRUCO' ? 'RETRUCO' : trucoLevel === 'RETRUCO' ? 'VALE4' : null;
     const prompt = `
       Estás jugando Truco Uruguayo con muestra. El oponente te acaba de ofrecer "${trucoLevel}".
       Tus cartas: ${JSON.stringify(aiCards)}
@@ -33,10 +35,11 @@ export async function POST(request: Request) {
       - Si rechazas, el oponente se lleva los puntos anteriores (${trucoLevel === 'TRUCO' ? 1 : trucoLevel === 'RETRUCO' ? 2 : 3} puntos).
       - Tu objetivo es maximizar tus puntos y minimizar los del oponente.
       - Considera la fuerza de tus cartas, la muestra y el contexto de la ronda.
+      ${canEscalate ? `- También puedes ESCALAR la apuesta diciendo "${nextLevel}" en vez de aceptar o rechazar, si crees que te conviene.` : ''}
 
-      ¿Aceptas o rechazas la oferta de "${trucoLevel}"? Responde SOLO con un objeto JSON:
+      ¿Qué decides? Responde SOLO con un objeto JSON:
       {
-        "accept": true/false, // true si aceptas, false si rechazas
+        "action": "accept" | "reject"${canEscalate ? ' | "escalate"' : ''}, // "accept" para aceptar, "reject" para rechazar, ${canEscalate ? '"escalate" para escalar a ' + nextLevel + ',' : ''}
         "explanation": "Explica brevemente tu decisión."
       }
     `;
@@ -53,7 +56,7 @@ export async function POST(request: Request) {
         parsedDecision = aiDecision ? JSON.parse(aiDecision) : null;
       } catch {
         parsedDecision = {
-          accept: Math.random() < 0.5,
+          action: Math.random() < 0.5 ? 'accept' : 'reject',
           explanation: 'Random choice (parsing error)'
         };
       }
@@ -62,7 +65,7 @@ export async function POST(request: Request) {
       return NextResponse.json({
         error: 'OpenAI API error',
         decision: {
-          accept: Math.random() < 0.5,
+          action: Math.random() < 0.5 ? 'accept' : 'reject',
           explanation: 'Random choice (OpenAI API error)'
         }
       });
@@ -71,7 +74,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       error: 'Failed to process truco offer',
       decision: {
-        accept: Math.random() < 0.5,
+        action: Math.random() < 0.5 ? 'accept' : 'reject',
         explanation: 'Random choice due to server error'
       }
     }, { status: 200 });

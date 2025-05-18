@@ -34,7 +34,7 @@ export function getEndRoundState(prev: GameState): GameState {
   return {
     ...prev,
     phase: { type: 'ROUND_END' },
-    message: 'Round Over! No more cards.'
+    message: 'No hay más cartas. Se terminó la ronda.'
   };
 }
 

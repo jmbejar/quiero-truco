@@ -27,7 +27,7 @@ export default function Home() {
     <div className="flex flex-col items-center justify-center min-h-screen bg-green-600">
       <h1 className="text-3xl font-bold text-white m-4">Quiero Truco</h1>
       <div className="flex flex-row w-full h-[90vh] bg-green-800 overflow-hidden">
-        <div className="w-3/4 h-full flex items-center justify-center bg-transparent p-4">
+        <div className="w-2/3 h-full flex items-center justify-center bg-transparent p-4">
           <GameBoard 
             topCards={gameState.aiCards} 
             bottomCards={gameState.humanCards} 
@@ -37,7 +37,7 @@ export default function Home() {
             onPlayerCardSelect={handlePlayerCardSelect}
           />
         </div>
-        <div className="w-1/4 h-full flex flex-col justify-between bg-gray-50 p-6 border-l border-gray-200">
+        <div className="w-1/3 h-full flex flex-col justify-between bg-gray-50 p-6 border-l border-gray-200">
           <div>
             <MessageBanner message={gameState.message} />
             <RoundResultHistory resultHistory={gameState.roundState.resultHistory} />

@@ -8,7 +8,7 @@ interface ActionButtonsProps {
   onNextRound: () => void;
   onNextTurn: () => void;
   onTruco: () => void;
-  onTrucoResponse: (accept: boolean) => void;
+  onTrucoResponse: (action: 'accept' | 'reject' | 'escalate') => void;
 }
 
 const ActionButtons: React.FC<ActionButtonsProps> = ({
@@ -80,17 +80,29 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
     {trucoState.type === 'CALLED' && trucoState.lastCaller === 'AI' && (
       <div className="flex gap-4 w-full justify-center">
         <button
-          onClick={() => onTrucoResponse(true)}
+          onClick={() => onTrucoResponse('accept')}
           className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-full w-full cursor-pointer"
         >
           Quiero
         </button>
         <button
-          onClick={() => onTrucoResponse(false)}
+          onClick={() => onTrucoResponse('reject')}
           className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-full w-full cursor-pointer"
         >
           No Quiero
         </button>
+        {(trucoState.level === 'TRUCO' || trucoState.level === 'RETRUCO') && (
+          <button
+            onClick={() => onTrucoResponse('escalate')}
+            className={
+              trucoState.level === 'TRUCO'
+                ? "bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-6 rounded-full w-full cursor-pointer"
+                : "bg-yellow-800 hover:bg-yellow-900 text-white font-bold py-2 px-6 rounded-full w-full cursor-pointer"
+            }
+          >
+            {trucoState.level === 'TRUCO' ? 'Retruco' : 'Vale 4'}
+          </button>
+        )}
       </div>
     )}
   </div>

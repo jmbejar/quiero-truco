@@ -182,28 +182,46 @@ export function useTrucoGame() {
       gameState.playedCards,
       gameState.roundState
     );
-    setGameState(prev => {
-      const points = nextLevel === 'VALE4' ? 4 : 
-                    nextLevel === 'RETRUCO' ? 3 : 2;
-      const rejectedPoints = points - 1;
-      return {
+    if (aiDecision.action === 'accept') {
+      setGameState(prev => {
+        return {
+          ...prev,
+          trucoState: { type: 'ACCEPTED', level: nextLevel, lastCaller: 'HUMAN' },
+          message: `Jugador CPU aceptó ${nextLevel}!`,
+          phase: prev.phase,
+          humanScore: prev.humanScore
+        };
+      });
+    } else if (aiDecision.action === 'reject') {
+      setGameState(prev => {
+        const points = nextLevel === 'VALE4' ? 4 : 
+                      nextLevel === 'RETRUCO' ? 3 : 2;
+        const rejectedPoints = points - 1;
+        return {
+          ...prev,
+          trucoState: { type: 'REJECTED', level: nextLevel, lastCaller: 'HUMAN' },
+          message: `Jugador CPU rechazó ${nextLevel}! Tú recibes ${rejectedPoints} puntos!`,
+          phase: { type: 'ROUND_END' },
+          humanScore: prev.humanScore + rejectedPoints
+        };
+      });
+    } else if (aiDecision.action === 'escalate') {
+      let escalateLevel: 'RETRUCO' | 'VALE4' | null = null;
+      if (nextLevel === 'TRUCO') escalateLevel = 'RETRUCO';
+      else if (nextLevel === 'RETRUCO') escalateLevel = 'VALE4';
+      if (!escalateLevel) return;
+      setGameState(prev => ({
         ...prev,
-        trucoState: aiDecision.accept 
-          ? { type: 'ACCEPTED', level: nextLevel, lastCaller: 'HUMAN' }
-          : { type: 'REJECTED', level: nextLevel, lastCaller: 'HUMAN' },
-        message: aiDecision.accept
-          ? `Jugador CPU aceptó ${nextLevel}!`
-          : `Jugador CPU rechazó ${nextLevel}! Tú recibes ${rejectedPoints} puntos!`,
-        phase: aiDecision.accept ? prev.phase : { type: 'ROUND_END' },
-        humanScore: aiDecision.accept ? prev.humanScore : prev.humanScore + rejectedPoints
-      };
-    });
+        trucoState: { type: 'CALLED', level: escalateLevel, lastCaller: 'AI' },
+        message: `Jugador CPU te canta: ¡${escalateLevel}! ¿Aceptás?`
+      }));
+    }
   }, [gameState]);
 
-  const handleTrucoResponse = useCallback((accept: boolean) => {
+  const handleTrucoResponse = useCallback((action: 'accept' | 'reject' | 'escalate') => {
     setGameState(prev => {
       if (prev.trucoState.type !== 'CALLED' || !prev.trucoState.level) return prev;
-      if (accept) {
+      if (action === 'accept') {
         const cardIndex = prev.trucoState.cardIndex!;
         const selectedCard = prev.aiCards[cardIndex];
         const updatedAiCards = [...prev.aiCards];
@@ -249,7 +267,7 @@ export function useTrucoGame() {
           phase: { type: 'HUMAN_TURN' },
           message: '',
         };
-      } else {
+      } else if (action === 'reject') {
         const points = prev.trucoState.level === 'VALE4' ? 3 :
                       prev.trucoState.level === 'RETRUCO' ? 2 : 1;
         return {
@@ -259,9 +277,70 @@ export function useTrucoGame() {
           phase: { type: 'ROUND_END' },
           aiScore: prev.aiScore + points
         };
+      } else if (action === 'escalate') {
+        let escalateLevel: 'RETRUCO' | 'VALE4' | null = null;
+        if (prev.trucoState.level === 'TRUCO') escalateLevel = 'RETRUCO';
+        else if (prev.trucoState.level === 'RETRUCO') escalateLevel = 'VALE4';
+        if (!escalateLevel) return prev;
+        return {
+          ...prev,
+          trucoState: { type: 'CALLED', level: escalateLevel, lastCaller: 'HUMAN' },
+          message: `El jugador CPU está decidiendo si aceptar ${escalateLevel}...`
+        };
       }
+      return prev;
     });
-  }, [endRound]);
+    if (action === 'escalate') {
+      (async () => {
+        let nextLevel: 'RETRUCO' | 'VALE4' | null = null;
+        if (gameState.trucoState.level === 'TRUCO') nextLevel = 'RETRUCO';
+        else if (gameState.trucoState.level === 'RETRUCO') nextLevel = 'VALE4';
+        if (!nextLevel) return;
+        const aiDecision = await getTrucoOfferAIDecision(
+          gameState.aiCards,
+          gameState.humanCards,
+          gameState.muestraCard,
+          nextLevel,
+          gameState.playedCards,
+          gameState.roundState
+        );
+        if (aiDecision.action === 'accept') {
+          setGameState(prev => {
+            return {
+              ...prev,
+              trucoState: { type: 'ACCEPTED', level: nextLevel, lastCaller: 'HUMAN' },
+              message: `Jugador CPU aceptó ${nextLevel}!`,
+              phase: prev.phase,
+              humanScore: prev.humanScore
+            };
+          });
+        } else if (aiDecision.action === 'reject') {
+          setGameState(prev => {
+            const points = nextLevel === 'VALE4' ? 4 : 
+                          nextLevel === 'RETRUCO' ? 3 : 2;
+            const rejectedPoints = points - 1;
+            return {
+              ...prev,
+              trucoState: { type: 'REJECTED', level: nextLevel, lastCaller: 'HUMAN' },
+              message: `Jugador CPU rechazó ${nextLevel}! Tú recibes ${rejectedPoints} puntos!`,
+              phase: { type: 'ROUND_END' },
+              humanScore: prev.humanScore + rejectedPoints
+            };
+          });
+        } else if (aiDecision.action === 'escalate') {
+          let escalateLevel: 'RETRUCO' | 'VALE4' | null = null;
+          if (nextLevel === 'TRUCO') escalateLevel = 'RETRUCO';
+          else if (nextLevel === 'RETRUCO') escalateLevel = 'VALE4';
+          if (!escalateLevel) return;
+          setGameState(prev => ({
+            ...prev,
+            trucoState: { type: 'CALLED', level: escalateLevel, lastCaller: 'AI' },
+            message: `Jugador CPU te canta: ¡${escalateLevel}! ¿Aceptás?`
+          }));
+        }
+      })();
+    }
+  }, [endRound, gameState]);
 
   useEffect(() => {
     if (gameState.phase.type === 'AI_TURN' && gameState.trucoState.type !== 'CALLED') {

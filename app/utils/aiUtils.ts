@@ -8,7 +8,7 @@ export interface AIDecision {
 }
 
 export interface TrucoOfferAIDecision {
-  accept: boolean;
+  action: 'accept' | 'reject' | 'escalate';
   explanation: string;
 }
 
@@ -106,7 +106,7 @@ export async function getTrucoOfferAIDecision(
     console.error('Error in getTrucoOfferAIDecision:', error);
     // Fallback: random accept/reject
     return {
-      accept: Math.random() < 0.5,
+      action: Math.random() < 0.5 ? 'accept' : 'reject',
       explanation: 'Random choice due to API error',
     };
   }
