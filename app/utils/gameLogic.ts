@@ -26,7 +26,7 @@ export function getInitialGameState(prev: GameState): GameState {
     },
     humanScore: prev.humanScore,
     aiScore: prev.aiScore,
-    message: prev.roundState.humanStartsRound ? 'Your turn! Select a card to play.' : 'AI is thinking...',
+    message: prev.roundState.humanStartsRound ? '¡Tu turno! Selecciona una carta para jugar.' : 'Jugador CPU está pensando...',
   };
 }
 
@@ -48,7 +48,7 @@ export function getNextTurnState(prev: GameState): GameState {
     humanPlayedCard: null,
     aiPlayedCard: null,
     phase: playerPlaysFirst ? { type: 'HUMAN_TURN' } : { type: 'AI_TURN' },
-    message: playerPlaysFirst ? 'Your turn! Select a card to play.' : 'AI is thinking...',
+    message: playerPlaysFirst ? '¡Tu turno! Selecciona una carta para jugar.' : 'Jugador CPU está pensando...',
   };
 }
 
@@ -91,6 +91,6 @@ export function getPlayerCardSelectState(prev: GameState, index: number): GameSt
     humanPlayedCard: selectedCard,
     playedCards: [selectedCard],
     phase: { type: 'AI_TURN' },
-    message: 'AI is thinking...',
+    message: 'Jugador CPU está pensando...',
   };
 } 

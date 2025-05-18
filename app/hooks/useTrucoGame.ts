@@ -23,7 +23,7 @@ export function useTrucoGame() {
     },
     humanScore: 0,
     aiScore: 0,
-    message: 'Game starting...'
+    message: 'El juego está comenzando...'
   });
 
   const [nextTurnProgress, setNextTurnProgress] = useState(0);
@@ -87,8 +87,8 @@ export function useTrucoGame() {
               playedCards: [...prev.playedCards, selectedCard],
               phase: roundEnded ? { type: 'ROUND_END' } : { type: 'SHOWING_PLAYED_CARDS' },
               message: roundEnded 
-                ? (playerWinsInRound >= 2 ? `You won the round! +${pointsToAward} points` : `AI won the round! +${pointsToAward} points`)
-                : (playerWon ? 'You won this hand!' : 'AI won this hand!'),
+                ? (playerWinsInRound >= 2 ? `Ganaste la ronda! +${pointsToAward} puntos` : `El jugador CPU ganó la ronda! +${pointsToAward} puntos`)
+                : (playerWon ? 'Ganaste esta mano!' : 'El jugador CPU ganó esta mano!'),
               roundState: {
                 ...prev.roundState,
                 humanWins: playerWon ? prev.roundState.humanWins + 1 : prev.roundState.humanWins,
@@ -106,7 +106,7 @@ export function useTrucoGame() {
             aiPlayedCard: selectedCard,
             playedCards: [selectedCard],
             phase: { type: 'HUMAN_TURN' },
-            message: "It's your turn"
+            message: "Te toca jugar"
           };
         });
         if (updatedAiCards.length === 0 && gameState.humanCards.length === 0) {
@@ -135,8 +135,8 @@ export function useTrucoGame() {
             playedCards: [...prev.playedCards, selectedCard],
             phase: roundEnded ? { type: 'ROUND_END' } : { type: 'SHOWING_PLAYED_CARDS' },
             message: roundEnded 
-              ? (playerWinsInRound >= 2 ? `You won the round! +${pointsToAward} points` : `AI won the round! +${pointsToAward} points`)
-              : (playerWon ? 'You won this hand!' : 'AI won this hand!'),
+              ? (playerWinsInRound >= 2 ? `Ganaste la ronda! +${pointsToAward} puntos` : `El jugador CPU ganó la ronda! +${pointsToAward} puntos`)
+              : (playerWon ? 'Ganaste esta mano!' : 'El jugador CPU ganó esta mano!'),
             roundState: {
               ...prev.roundState,
               humanWins: playerWon ? prev.roundState.humanWins + 1 : prev.roundState.humanWins,
@@ -154,7 +154,7 @@ export function useTrucoGame() {
           aiPlayedCard: selectedCard,
           playedCards: [selectedCard],
           phase: { type: 'HUMAN_TURN' },
-          message: "It's your turn"
+          message: "Te toca jugar"
         };
       });
     }
@@ -172,7 +172,7 @@ export function useTrucoGame() {
     setGameState(prev => ({
       ...prev,
       trucoState: { type: 'CALLED', level: nextLevel, lastCaller: 'HUMAN' },
-      message: `AI is thinking about ${nextLevel}...`
+      message: `El jugador CPU está decidiendo si aceptar ${nextLevel}...`
     }));
     const aiDecision = await getTrucoOfferAIDecision(
       gameState.aiCards,
@@ -192,8 +192,8 @@ export function useTrucoGame() {
           ? { type: 'ACCEPTED', level: nextLevel, lastCaller: 'HUMAN' }
           : { type: 'REJECTED', level: nextLevel, lastCaller: 'HUMAN' },
         message: aiDecision.accept
-          ? `AI accepted ${nextLevel}!`
-          : `AI rejected ${nextLevel}! You get ${rejectedPoints} points!`,
+          ? `Jugador CPU aceptó ${nextLevel}!`
+          : `Jugador CPU rechazó ${nextLevel}! Tú recibes ${rejectedPoints} puntos!`,
         phase: aiDecision.accept ? prev.phase : { type: 'ROUND_END' },
         humanScore: aiDecision.accept ? prev.humanScore : prev.humanScore + rejectedPoints
       };
@@ -227,8 +227,8 @@ export function useTrucoGame() {
             playedCards: [...prev.playedCards, selectedCard],
             phase: roundEnded ? { type: 'ROUND_END' } : { type: 'SHOWING_PLAYED_CARDS' },
             message: roundEnded 
-              ? (playerWinsInRound >= 2 ? `You won the round! +${pointsToAward} points` : `AI won the round! +${pointsToAward} points`)
-              : (playerWon ? 'You won this hand!' : 'AI won this hand!'),
+              ? (playerWinsInRound >= 2 ? `Ganaste la ronda! +${pointsToAward} puntos` : `El jugador CPU ganó la ronda! +${pointsToAward} puntos`)
+              : (playerWon ? 'Ganaste esta mano!' : 'El jugador CPU ganó esta mano!'),
             roundState: {
               ...prev.roundState,
               humanWins: playerWon ? prev.roundState.humanWins + 1 : prev.roundState.humanWins,
@@ -255,7 +255,7 @@ export function useTrucoGame() {
         return {
           ...prev,
           trucoState: { type: 'REJECTED', level: prev.trucoState.level, lastCaller: 'AI' },
-          message: `You rejected ${prev.trucoState.level}! AI gets ${points} points.`,
+          message: `Rechazaste ${prev.trucoState.level}! El jugador CPU recibe ${points} puntos.`,
           phase: { type: 'ROUND_END' },
           aiScore: prev.aiScore + points
         };

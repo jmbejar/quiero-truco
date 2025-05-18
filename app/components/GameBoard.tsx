@@ -35,7 +35,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
             <Card number={aiPlayedCard.number} palo={aiPlayedCard.palo} />
           ) : (
             <div className="w-24 h-36 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center opacity-50">
-              <span className="text-gray-400">AI card</span>
+              <span className="text-gray-400">Carta CPU</span>
             </div>
           )}
         </div>
@@ -58,7 +58,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
             <Card number={playerPlayedCard.number} palo={playerPlayedCard.palo} />
           ) : (
             <div className="w-24 h-36 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center opacity-50">
-              <span className="text-gray-400">Your card</span>
+              <span className="text-gray-400">Tu carta</span>
             </div>
           )}
         </div>

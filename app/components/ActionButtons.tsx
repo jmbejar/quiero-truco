@@ -26,7 +26,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         onClick={onNextRound}
         className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded w-full"
       >
-        Next Round
+        Siguiente Ronda
       </button>
     )}
     {phase.type === 'SHOWING_PLAYED_CARDS' && (
@@ -44,7 +44,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         }}
         className="hover:bg-blue-700 text-white font-bold py-2 px-4 rounded w-full"
       >
-        Next Turn
+        Siguiente Turno
       </button>
     )}
     {/* Truco action buttons */}
