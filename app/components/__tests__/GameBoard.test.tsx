@@ -49,8 +49,8 @@ describe('GameBoard', () => {
         middleCard={middleCard}
       />
     );
-    expect(screen.getByText('AI card')).toBeInTheDocument();
-    expect(screen.getByText('Your card')).toBeInTheDocument();
+    expect(screen.getByText('Carta CPU')).toBeInTheDocument();
+    expect(screen.getByText('Tu carta')).toBeInTheDocument();
   });
 
   it('renders AI and player played cards if provided', () => {
@@ -64,8 +64,8 @@ describe('GameBoard', () => {
       />
     );
     // The placeholders should not be present
-    expect(screen.queryByText('AI card')).not.toBeInTheDocument();
-    expect(screen.queryByText('Your card')).not.toBeInTheDocument();
+    expect(screen.queryByText('Carta CPU')).not.toBeInTheDocument();
+    expect(screen.queryByText('Tu carta')).not.toBeInTheDocument();
   });
 
   it('calls onPlayerCardSelect when a bottom card is clicked', () => {

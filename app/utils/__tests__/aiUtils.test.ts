@@ -71,17 +71,17 @@ describe('getTrucoOfferAIDecision', () => {
   it('returns decision from API on success', async () => {
     (fetch as jest.Mock).mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ decision: { accept: true, explanation: 'AI accepts' } }),
+      json: async () => ({ decision: { action: 'accept', explanation: 'AI accepts' } }),
     });
     const decision = await getTrucoOfferAIDecision(aiCards, humanCards, muestraCard, trucoLevel, playedCards, roundState);
-    expect(decision).toEqual({ accept: true, explanation: 'AI accepts' });
+    expect(decision).toEqual({ action: 'accept', explanation: 'AI accepts' });
     expect(fetch).toHaveBeenCalled();
   });
 
   it('returns fallback decision on API error', async () => {
     (fetch as jest.Mock).mockRejectedValueOnce(new Error('API down'));
     const decision = await getTrucoOfferAIDecision(aiCards, humanCards, muestraCard, trucoLevel, playedCards, roundState);
-    expect(typeof decision.accept).toBe('boolean');
+    expect(['accept', 'reject']).toContain(decision.action);
     expect(decision.explanation).toMatch(/Random choice/);
   });
 
@@ -91,7 +91,7 @@ describe('getTrucoOfferAIDecision', () => {
       json: async () => ({})
     });
     const decision = await getTrucoOfferAIDecision(aiCards, humanCards, muestraCard, trucoLevel, playedCards, roundState);
-    expect(typeof decision.accept).toBe('boolean');
+    expect(['accept', 'reject']).toContain(decision.action);
     expect(decision.explanation).toMatch(/Random choice/);
   });
 }); 

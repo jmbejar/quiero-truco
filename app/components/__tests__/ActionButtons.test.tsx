@@ -16,7 +16,7 @@ describe('ActionButtons', () => {
         onTrucoResponse={jest.fn()}
       />
     );
-    const button = screen.getByText('Next Round');
+    const button = screen.getByText('Siguiente Ronda');
     expect(button).toBeInTheDocument();
     fireEvent.click(button);
     expect(onNextRound).toHaveBeenCalled();
