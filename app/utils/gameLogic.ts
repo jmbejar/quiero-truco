@@ -1,21 +1,17 @@
-import { GameState } from '../types/game';
+import { Card, GameState } from '../types/game';
 import { createDeck, dealCards } from './deckUtils';
 import { determineWinner, hasFlor } from './gameUtils';
 
-export function getInitialGameState(prev: GameState): GameState {
-  const fullDeck = createDeck();
-  const { topCards, bottomCards, remainingDeck } = dealCards(fullDeck);
-  const muestraIndex = Math.floor(Math.random() * remainingDeck.length);
-  const muestraCard = remainingDeck[muestraIndex];
-  remainingDeck.splice(muestraIndex, 1);
-  
-  // Check for "flor" (all 3 cards of the same suit)
+function processFlorAndComposeMessage(
+  bottomCards: Card[],
+  topCards: Card[],
+  humanStartsRound: boolean,
+): { humanHasFlor: boolean; aiHasFlor: boolean; initialMessage: string } {
   const humanHasFlor = hasFlor(bottomCards);
   const aiHasFlor = hasFlor(topCards);
-  
-  // Create the initial message with flor announcement if applicable
-  let initialMessage = prev.roundState.humanStartsRound ? '¡Tu turno! Selecciona una carta para jugar.' : 'Jugador CPU está pensando...';
-  
+
+  let initialMessage = humanStartsRound ? '¡Tu turno! Selecciona una carta para jugar.' : 'Jugador CPU está pensando...';
+
   if (humanHasFlor && aiHasFlor) {
     initialMessage = 'Ambos jugadores cantan flor. 3 puntos para cada uno. ' + initialMessage;
   } else if (humanHasFlor) {
@@ -23,7 +19,23 @@ export function getInitialGameState(prev: GameState): GameState {
   } else if (aiHasFlor) {
     initialMessage = 'El jugador CPU cantó flor. Gana 3 puntos. ' + initialMessage;
   }
-  
+
+  return { humanHasFlor, aiHasFlor, initialMessage };
+}
+
+export function getInitialGameState(prev: GameState): GameState {
+  const fullDeck = createDeck();
+  const { topCards, bottomCards, remainingDeck } = dealCards(fullDeck);
+  const muestraIndex = Math.floor(Math.random() * remainingDeck.length);
+  const muestraCard = remainingDeck[muestraIndex];
+  remainingDeck.splice(muestraIndex, 1);
+
+  const { humanHasFlor, aiHasFlor, initialMessage } = processFlorAndComposeMessage(
+    bottomCards,
+    topCards,
+    prev.roundState.humanStartsRound,
+  );
+
   return {
     aiCards: topCards,
     humanCards: bottomCards,

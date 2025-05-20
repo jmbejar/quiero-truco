@@ -1,4 +1,8 @@
-import { CardProps } from '../components/Card';
+export type Palo = "oro" | "basto" | "espada" | "copa";
+export type Card = {
+  number: number;
+  palo: Palo;
+}
 
 // Game Phase States
 export type GamePhase = 
@@ -35,12 +39,12 @@ export type RoundState = {
 // Game State
 export type GameState = {
   // Core game state
-  aiCards: CardProps[];
-  humanCards: CardProps[];
-  muestraCard: CardProps;
-  humanPlayedCard: CardProps | null;
-  aiPlayedCard: CardProps | null;
-  playedCards: CardProps[];
+  aiCards: Card[];
+  humanCards: Card[];
+  muestraCard: Card;
+  humanPlayedCard: Card | null;
+  aiPlayedCard: Card | null;
+  playedCards: Card[];
   
   // Game phases
   phase: GamePhase;
