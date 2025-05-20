@@ -3,7 +3,7 @@ import { GameState } from '../../types/game';
 import * as deckUtils from '../deckUtils';
 
 jest.mock('../deckUtils', () => ({
-  createDeck: jest.fn(() => []),
+  ...jest.requireActual('../deckUtils'),
   dealCards: jest.fn()
 }));
 
