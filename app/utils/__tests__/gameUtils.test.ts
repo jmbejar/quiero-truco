@@ -1,4 +1,4 @@
-import { determineWinner } from '../gameUtils';
+import { determineWinner, hasFlor } from '../gameUtils';
 import { Palo } from '../../components/Card';
 
 const muestra = { number: 4, palo: 'espada' as Palo };
@@ -50,5 +50,34 @@ describe('determineWinner', () => {
     const playerCard = { number: 2, palo: 'basto' as Palo };
     const aiCard = { number: 3, palo: 'basto' as Palo };
     expect(determineWinner(playerCard, aiCard, muestra)).toBe(false);
+  });
+});
+
+describe('hasFlor', () => {
+  it('returns true when all cards have the same suit', () => {
+    const cards = [
+      { number: 1, palo: 'espada' as Palo },
+      { number: 5, palo: 'espada' as Palo },
+      { number: 12, palo: 'espada' as Palo }
+    ];
+    expect(hasFlor(cards)).toBe(true);
+  });
+
+  it('returns false when cards have different suits', () => {
+    const cards = [
+      { number: 1, palo: 'espada' as Palo },
+      { number: 5, palo: 'basto' as Palo },
+      { number: 12, palo: 'espada' as Palo }
+    ];
+    expect(hasFlor(cards)).toBe(false);
+  });
+
+  it('returns false for an empty array', () => {
+    expect(hasFlor([])).toBe(false);
+  });
+
+  it('returns true for a single card', () => {
+    const cards = [{ number: 1, palo: 'espada' as Palo }];
+    expect(hasFlor(cards)).toBe(true);
   });
 }); 

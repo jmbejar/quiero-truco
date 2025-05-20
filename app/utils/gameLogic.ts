@@ -1,6 +1,6 @@
 import { GameState } from '../types/game';
 import { createDeck, dealCards } from './deckUtils';
-import { determineWinner } from './gameUtils';
+import { determineWinner, hasFlor } from './gameUtils';
 
 export function getInitialGameState(prev: GameState): GameState {
   const fullDeck = createDeck();
@@ -8,6 +8,22 @@ export function getInitialGameState(prev: GameState): GameState {
   const muestraIndex = Math.floor(Math.random() * remainingDeck.length);
   const muestraCard = remainingDeck[muestraIndex];
   remainingDeck.splice(muestraIndex, 1);
+  
+  // Check for "flor" (all 3 cards of the same suit)
+  const humanHasFlor = hasFlor(bottomCards);
+  const aiHasFlor = hasFlor(topCards);
+  
+  // Create the initial message with flor announcement if applicable
+  let initialMessage = prev.roundState.humanStartsRound ? '¡Tu turno! Selecciona una carta para jugar.' : 'Jugador CPU está pensando...';
+  
+  if (humanHasFlor && aiHasFlor) {
+    initialMessage = 'Ambos jugadores cantan flor. 3 puntos para cada uno. ' + initialMessage;
+  } else if (humanHasFlor) {
+    initialMessage = '¡Cantaste flor! Ganas 3 puntos. ' + initialMessage;
+  } else if (aiHasFlor) {
+    initialMessage = 'El jugador CPU cantó flor. Gana 3 puntos. ' + initialMessage;
+  }
+  
   return {
     aiCards: topCards,
     humanCards: bottomCards,
@@ -24,9 +40,9 @@ export function getInitialGameState(prev: GameState): GameState {
       aiWins: 0,
       resultHistory: []
     },
-    humanScore: prev.humanScore,
-    aiScore: prev.aiScore,
-    message: prev.roundState.humanStartsRound ? '¡Tu turno! Selecciona una carta para jugar.' : 'Jugador CPU está pensando...',
+    humanScore: prev.humanScore + (humanHasFlor ? 3 : 0),
+    aiScore: prev.aiScore + (aiHasFlor ? 3 : 0),
+    message: initialMessage,
   };
 }
 
