@@ -37,6 +37,17 @@ const getSpecialCardRank = (card: CardProps): number => {
   );
 };
 
+/**
+ * Checks if the given cards constitute a "flor" (all cards have the same suit)
+ * @param cards The cards to check
+ * @returns True if all cards have the same suit
+ */
+export const hasFlor = (cards: CardProps[]): boolean => {
+  if (cards.length === 0) return false;
+  const firstSuit = cards[0].palo;
+  return cards.every(card => card.palo === firstSuit);
+};
+
 export const determineWinner = (playerCard: CardProps, aiCard: CardProps, muestraCard: CardProps): boolean => {
   // Check if either card is "envido" (same suit as muestra)
   const playerIsEnvido = playerCard.palo === muestraCard.palo && ENVIDO_CARDS.includes(playerCard.number);
