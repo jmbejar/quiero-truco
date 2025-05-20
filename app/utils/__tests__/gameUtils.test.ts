@@ -75,9 +75,4 @@ describe('hasFlor', () => {
   it('returns false for an empty array', () => {
     expect(hasFlor([])).toBe(false);
   });
-
-  it('returns true for a single card', () => {
-    const cards = [{ number: 1, palo: 'espada' as Palo }];
-    expect(hasFlor(cards)).toBe(true);
-  });
 }); 

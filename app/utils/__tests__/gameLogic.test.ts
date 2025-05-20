@@ -1,30 +1,22 @@
 import { getInitialGameState } from '../gameLogic';
 import { GameState } from '../../types/game';
 import * as deckUtils from '../deckUtils';
-import * as gameUtils from '../gameUtils';
 
 jest.mock('../deckUtils', () => ({
-  createDeck: jest.fn(),
+  createDeck: jest.fn(() => []),
   dealCards: jest.fn()
-}));
-
-jest.mock('../gameUtils', () => ({
-  determineWinner: jest.fn(),
-  hasFlor: jest.fn()
 }));
 
 describe('getInitialGameState', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     
-    // Default mock implementations
-    (deckUtils.createDeck as jest.Mock).mockReturnValue([]);
+    // Default mock implementation
     (deckUtils.dealCards as jest.Mock).mockReturnValue({
       topCards: [{ number: 1, palo: 'espada' }, { number: 2, palo: 'basto' }, { number: 3, palo: 'oro' }],
       bottomCards: [{ number: 4, palo: 'copa' }, { number: 5, palo: 'espada' }, { number: 6, palo: 'basto' }],
       remainingDeck: [{ number: 7, palo: 'oro' }]
     });
-    (gameUtils.hasFlor as jest.Mock).mockReturnValue(false);
   });
 
   it('returns a valid initial game state with correct card counts', () => {
@@ -51,10 +43,12 @@ describe('getInitialGameState', () => {
   });
 
   it('awards 3 points to human when only human has flor', () => {
-    (gameUtils.hasFlor as jest.Mock)
-      .mockImplementation((cards) => 
-        JSON.stringify(cards) === JSON.stringify([{ number: 4, palo: 'copa' }, { number: 5, palo: 'espada' }, { number: 6, palo: 'basto' }])
-      );
+    // Setup cards with flor for human player (all cards same suit)
+    (deckUtils.dealCards as jest.Mock).mockReturnValue({
+      topCards: [{ number: 1, palo: 'espada' }, { number: 2, palo: 'basto' }, { number: 3, palo: 'oro' }],
+      bottomCards: [{ number: 4, palo: 'oro' }, { number: 5, palo: 'oro' }, { number: 6, palo: 'oro' }],
+      remainingDeck: [{ number: 7, palo: 'copa' }]
+    });
 
     const prev: Partial<GameState> = {
       roundState: {
@@ -76,10 +70,12 @@ describe('getInitialGameState', () => {
   });
 
   it('awards 3 points to AI when only AI has flor', () => {
-    (gameUtils.hasFlor as jest.Mock)
-      .mockImplementation((cards) => 
-        JSON.stringify(cards) === JSON.stringify([{ number: 1, palo: 'espada' }, { number: 2, palo: 'basto' }, { number: 3, palo: 'oro' }])
-      );
+    // Setup cards with flor for AI player (all cards same suit)
+    (deckUtils.dealCards as jest.Mock).mockReturnValue({
+      topCards: [{ number: 1, palo: 'basto' }, { number: 2, palo: 'basto' }, { number: 3, palo: 'basto' }],
+      bottomCards: [{ number: 4, palo: 'copa' }, { number: 5, palo: 'espada' }, { number: 6, palo: 'oro' }],
+      remainingDeck: [{ number: 7, palo: 'oro' }]
+    });
 
     const prev: Partial<GameState> = {
       roundState: {
@@ -101,7 +97,12 @@ describe('getInitialGameState', () => {
   });
 
   it('awards 3 points to both players when both have flor', () => {
-    (gameUtils.hasFlor as jest.Mock).mockReturnValue(true);
+    // Setup cards with flor for both players
+    (deckUtils.dealCards as jest.Mock).mockReturnValue({
+      topCards: [{ number: 1, palo: 'espada' }, { number: 2, palo: 'espada' }, { number: 3, palo: 'espada' }],
+      bottomCards: [{ number: 4, palo: 'copa' }, { number: 5, palo: 'copa' }, { number: 6, palo: 'copa' }],
+      remainingDeck: [{ number: 7, palo: 'oro' }]
+    });
 
     const prev: Partial<GameState> = {
       roundState: {
