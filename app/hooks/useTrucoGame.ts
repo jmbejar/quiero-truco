@@ -286,8 +286,8 @@ export function useTrucoGame() {
     }));
 
     const aiDecision = await getEnvidoOfferAIDecision(
-      gameState.aiCards,
-      gameState.humanCards,
+      gameState.originalAiCards,
+      gameState.originalHumanCards,
       gameState.muestraCard,
       gameState.playedCards,
       gameState.roundState
@@ -329,8 +329,8 @@ export function useTrucoGame() {
         envidoState: { 
           type: 'REJECTED', 
           lastCaller: 'HUMAN',
-          humanPoints: calculateEnvidoPoints(gameState.originalHumanCards, gameState.muestraCard),
-          aiPoints: calculateEnvidoPoints(gameState.originalAiCards, gameState.muestraCard)
+          humanPoints: 0,
+          aiPoints: 0
         },
         message: 'Jugador CPU rechazó envido! Tú recibes 1 punto.',
         humanScore: prev.humanScore + 1
@@ -475,8 +475,8 @@ export function useTrucoGame() {
       // Make AI calculate its points
       (async () => {
         const aiDecision = await getEnvidoOfferAIDecision(
-          gameState.aiCards,
-          gameState.humanCards,
+          gameState.originalAiCards,
+          gameState.originalHumanCards,
           gameState.muestraCard,
           gameState.playedCards,
           gameState.roundState
@@ -518,8 +518,8 @@ export function useTrucoGame() {
         envidoState: { 
           type: 'REJECTED', 
           lastCaller: 'AI',
-          humanPoints: calculateEnvidoPoints(gameState.originalHumanCards, gameState.muestraCard),
-          aiPoints: calculateEnvidoPoints(gameState.originalAiCards, gameState.muestraCard)
+          humanPoints: 0,
+          aiPoints: 0
         },
         message: 'Rechazaste envido! El jugador CPU recibe 1 punto.',
         aiScore: prev.aiScore + 1
