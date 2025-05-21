@@ -4,20 +4,26 @@ import { GameState } from '../types/game';
 interface ActionButtonsProps {
   phase: GameState['phase'];
   trucoState: GameState['trucoState'];
+  envidoState: GameState['envidoState'];
+  playedCards: GameState['playedCards'];
   nextTurnProgress: number;
   onNextRound: () => void;
   onNextTurn: () => void;
   onTruco: () => void;
+  onEnvido: () => void;
   onTrucoResponse: (action: 'accept' | 'reject' | 'escalate') => void;
 }
 
 const ActionButtons: React.FC<ActionButtonsProps> = ({
   phase,
   trucoState,
+  envidoState,
+  playedCards,
   nextTurnProgress,
   onNextRound,
   onNextTurn,
   onTruco,
+  onEnvido,
   onTrucoResponse
 }) => (
   <div className="flex flex-col gap-4 items-center">
@@ -46,6 +52,17 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
       >
         Siguiente Turno
       </button>
+    )}
+    {/* Envido action button */}
+    {phase.type === 'HUMAN_TURN' && playedCards.length === 0 && envidoState.type === 'NONE' && trucoState.type === 'NONE' && (
+      <div className="flex gap-4 w-full justify-center">
+        <button
+          onClick={onEnvido}
+          className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-full w-full cursor-pointer"
+        >
+          Envido
+        </button>
+      </div>
     )}
     {/* Truco action buttons */}
     {phase.type === 'HUMAN_TURN' && (
