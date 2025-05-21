@@ -41,7 +41,6 @@ export async function POST(request: Request) {
       !hasFlor(opponentCards, middleCard);
     
     // The LLM will decide whether to offer envido or not
-    const shouldOfferEnvido = false; // Initial value, will be set by LLM decision
 
     // Create a prompt that describes the current game state
     const prompt = `
@@ -132,7 +131,7 @@ export async function POST(request: Request) {
         parsedDecision = {
           cardIndex: Math.floor(Math.random() * opponentCards.length),
           explanation: 'Random choice (parsing error)',
-          wantsEnvido: shouldOfferEnvido
+          wantsEnvido: false
         };
       }
       
@@ -146,7 +145,7 @@ export async function POST(request: Request) {
         decision: {
           cardIndex: Math.floor(Math.random() * opponentCards.length),
           explanation: 'Random choice (OpenAI API error)',
-          wantsEnvido: shouldOfferEnvido
+          wantsEnvido: false
         }
       });
     }
