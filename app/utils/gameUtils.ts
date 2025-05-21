@@ -50,16 +50,29 @@ export const hasFlor = (cards: CardProps[]): boolean => {
 
 export const determineWinner = (playerCard: CardProps, aiCard: CardProps, muestraCard: CardProps): boolean => {
   // Check if either card is "envido" (same suit as muestra)
-  const playerIsEnvido = playerCard.palo === muestraCard.palo && ENVIDO_CARDS.includes(playerCard.number);
-  const aiIsEnvido = aiCard.palo === muestraCard.palo && ENVIDO_CARDS.includes(aiCard.number);
+  // Special case: 12 card with same suit as muestra is treated as the muestra card if muestra is an envido card
+  const playerIsEnvido = (playerCard.palo === muestraCard.palo && ENVIDO_CARDS.includes(playerCard.number)) || 
+                       (playerCard.number === 12 && playerCard.palo === muestraCard.palo && ENVIDO_CARDS.includes(muestraCard.number));
+  const aiIsEnvido = (aiCard.palo === muestraCard.palo && ENVIDO_CARDS.includes(aiCard.number)) || 
+                   (aiCard.number === 12 && aiCard.palo === muestraCard.palo && ENVIDO_CARDS.includes(muestraCard.number));
 
   // If only one card is envido, that card wins
   if (playerIsEnvido && !aiIsEnvido) return true;
   if (!playerIsEnvido && aiIsEnvido) return false;
 
-  // If both cards are envido, higher number wins
+  // If both cards are envido, compare directly using the envido ranking (lower number means stronger card)
   if (playerIsEnvido && aiIsEnvido) {
-    return CARD_VALUES[playerCard.number] < CARD_VALUES[aiCard.number];
+    // Special case for 12 with same suit as muestra - use the muestra's number for comparison
+    const playerNumber = (playerCard.number === 12 && playerCard.palo === muestraCard.palo && ENVIDO_CARDS.includes(muestraCard.number)) 
+      ? muestraCard.number 
+      : playerCard.number;
+      
+    const aiNumber = (aiCard.number === 12 && aiCard.palo === muestraCard.palo && ENVIDO_CARDS.includes(muestraCard.number)) 
+      ? muestraCard.number 
+      : aiCard.number;
+      
+    // For envido cards, lower number means stronger card
+    return playerNumber < aiNumber;
   }
 
   // If neither is envido, check for special cards
