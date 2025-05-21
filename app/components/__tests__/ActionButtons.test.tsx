@@ -9,11 +9,15 @@ describe('ActionButtons', () => {
       <ActionButtons
         phase={{ type: 'ROUND_END' }}
         trucoState={{ type: 'NONE', level: null, lastCaller: null }}
+        envidoState={{ type: 'NONE', lastCaller: null }}
+        playedCards={[]}
         nextTurnProgress={0}
         onNextRound={onNextRound}
         onNextTurn={jest.fn()}
         onTruco={jest.fn()}
+        onEnvido={jest.fn()}
         onTrucoResponse={jest.fn()}
+        onEnvidoResponse={jest.fn()}
       />
     );
     const button = screen.getByText('Siguiente Ronda');
