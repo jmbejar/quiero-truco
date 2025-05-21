@@ -6,6 +6,7 @@ interface ActionButtonsProps {
   trucoState: GameState['trucoState'];
   envidoState: GameState['envidoState'];
   playedCards: GameState['playedCards'];
+  humanPlayedCard: GameState['humanPlayedCard'];
   nextTurnProgress: number;
   onNextRound: () => void;
   onNextTurn: () => void;
@@ -20,6 +21,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   trucoState,
   envidoState,
   playedCards,
+  humanPlayedCard,
   nextTurnProgress,
   onNextRound,
   onNextTurn,
@@ -56,7 +58,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
       </button>
     )}
     {/* Envido action button */}
-    {phase.type === 'HUMAN_TURN' && playedCards.length === 0 && envidoState.type === 'NONE' && trucoState.type === 'NONE' && (
+    {phase.type === 'HUMAN_TURN' && (playedCards.length === 0 || (playedCards.length === 1 && humanPlayedCard === null)) && envidoState.type === 'NONE' && trucoState.type === 'NONE' && (
       <div className="flex gap-4 w-full justify-center">
         <button
           onClick={onEnvido}

@@ -50,6 +50,7 @@ export default function Home() {
             trucoState={gameState.trucoState}
             envidoState={gameState.envidoState}
             playedCards={gameState.playedCards}
+            humanPlayedCard={gameState.humanPlayedCard}
             nextTurnProgress={nextTurnProgress}
             onNextRound={initializeGame}
             onNextTurn={handleNextTurn}

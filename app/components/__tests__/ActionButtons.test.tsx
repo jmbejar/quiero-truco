@@ -11,6 +11,7 @@ describe('ActionButtons', () => {
         trucoState={{ type: 'NONE', level: null, lastCaller: null }}
         envidoState={{ type: 'NONE', lastCaller: null }}
         playedCards={[]}
+        humanPlayedCard={null}
         nextTurnProgress={0}
         onNextRound={onNextRound}
         onNextTurn={jest.fn()}
