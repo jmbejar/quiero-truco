@@ -10,6 +10,7 @@ export type GamePhase =
   | { type: 'HUMAN_TURN' }
   | { type: 'AI_TURN' }
   | { type: 'SHOWING_PLAYED_CARDS' }
+  | { type: 'SHOWING_ENVIDO_POINTS' }
   | { type: 'ROUND_END' };
 
 // Available Truco Actions
@@ -25,6 +26,14 @@ export type TrucoState = {
   level: 'TRUCO' | 'RETRUCO' | 'VALE4' | null;
   lastCaller: 'HUMAN' | 'AI' | null;
   cardIndex?: number;  // Only needed when AI calls truco
+};
+
+// Envido States
+export type EnvidoState = {
+  type: 'NONE' | 'CALLED' | 'ACCEPTED' | 'REJECTED';
+  lastCaller: 'HUMAN' | 'AI' | null;
+  humanPoints?: number;
+  aiPoints?: number;
 };
 
 // Round State
@@ -49,6 +58,7 @@ export type GameState = {
   // Game phases
   phase: GamePhase;
   trucoState: TrucoState;
+  envidoState: EnvidoState;
   roundState: RoundState;
   
   // Scores

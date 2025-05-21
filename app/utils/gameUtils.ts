@@ -17,6 +17,15 @@ const CARD_VALUES: { [key: number]: number } = {
 // Special cards that can be "envido" (same suit as muestra)
 const ENVIDO_CARDS = [2, 4, 5, 10, 11];
 
+// Envido values for special muestra-suit cards
+const ENVIDO_SPECIAL_VALUES: { [key: number]: number } = {
+  2: 30,
+  4: 29,
+  5: 28,
+  10: 27,
+  11: 27
+};
+
 // Special cards that are stronger than regular cards but weaker than envido
 const SPECIAL_CARDS = [
   { number: 1, palo: 'espada' },  // 1 of swords (strongest special)
@@ -35,6 +44,88 @@ const getSpecialCardRank = (card: CardProps): number => {
   return SPECIAL_CARDS.findIndex(special => 
     special.number === card.number && special.palo === card.palo
   );
+};
+
+/**
+ * Calculates the envido points for given cards
+ * @param cards The cards to calculate points for
+ * @param muestraCard The muestra card for special envido rules
+ * @returns The envido points
+ */
+export const calculateEnvidoPoints = (cards: CardProps[], muestraCard: CardProps): number => {
+  if (cards.length === 0) return 0;
+  
+  // Convert cards 12, 11, 10 to zero value for envido
+  const getEnvidoValue = (card: CardProps): number => {
+    if ([12, 11, 10].includes(card.number)) return 0;
+    return card.number;
+  };
+
+  // Check for special muestra-suit cards
+  const muestraSuit = muestraCard.palo;
+  const specialMuestraCards = cards.filter(card => 
+    card.palo === muestraSuit && ENVIDO_CARDS.includes(card.number)
+  );
+  
+  // Handle special muestra-suit card case
+  if (specialMuestraCards.length === 1) {
+    const specialCard = specialMuestraCards[0];
+    const specialValue = ENVIDO_SPECIAL_VALUES[specialCard.number];
+    
+    // Find highest value from remaining cards
+    const remainingCards = cards.filter(card => 
+      !(card.palo === specialCard.palo && card.number === specialCard.number)
+    );
+    
+    let highestValue = 0;
+    for (const card of remainingCards) {
+      const value = getEnvidoValue(card);
+      if (value > highestValue) {
+        highestValue = value;
+      }
+    }
+    
+    return specialValue + highestValue;
+  }
+  
+  // Group cards by suit
+  const cardsBySuit: { [key: string]: CardProps[] } = {};
+  for (const card of cards) {
+    if (!cardsBySuit[card.palo]) {
+      cardsBySuit[card.palo] = [];
+    }
+    cardsBySuit[card.palo].push(card);
+  }
+  
+  // Find suit with most cards (for pairs)
+  let maxSuitCount = 0;
+  let maxSuit = '';
+  for (const suit in cardsBySuit) {
+    if (cardsBySuit[suit].length > maxSuitCount) {
+      maxSuitCount = cardsBySuit[suit].length;
+      maxSuit = suit;
+    }
+  }
+  
+  // If we have at least 2 cards of the same suit, calculate sum + 20
+  if (maxSuitCount >= 2) {
+    let sum = 0;
+    for (const card of cardsBySuit[maxSuit]) {
+      sum += getEnvidoValue(card);
+    }
+    return sum + 20;
+  }
+  
+  // If all cards have different suits, return the highest value
+  let highestValue = 0;
+  for (const card of cards) {
+    const value = getEnvidoValue(card);
+    if (value > highestValue) {
+      highestValue = value;
+    }
+  }
+  
+  return highestValue;
 };
 
 /**
