@@ -17,12 +17,23 @@ describe('useTrucoGame', () => {
         { number: 5, palo: 'basto' },
         { number: 6, palo: 'basto' }
       ],
+      originalAiCards: [
+        { number: 1, palo: 'oro' },
+        { number: 2, palo: 'oro' },
+        { number: 3, palo: 'oro' }
+      ],
+      originalHumanCards: [
+        { number: 4, palo: 'basto' },
+        { number: 5, palo: 'basto' },
+        { number: 6, palo: 'basto' }
+      ],
       muestraCard: { number: 1, palo: 'oro' },
       humanPlayedCard: null,
       aiPlayedCard: null,
       playedCards: [],
       phase: { type: 'HUMAN_TURN' },
       trucoState: { type: 'NONE', level: null, lastCaller: null },
+      envidoState: { type: 'NONE', lastCaller: null, humanPoints: 0, aiPoints: 0 },
       roundState: {
         humanStartsRound: true,
         lastTurnWinner: null,

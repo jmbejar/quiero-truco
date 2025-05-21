@@ -38,15 +38,19 @@ export function getInitialGameState(prev: GameState): GameState {
     muestraCard
   );
 
+  // Ensure original cards are also initialized and used correctly for flor calculation
   return {
     aiCards: topCards,
     humanCards: bottomCards,
+    originalAiCards: [...topCards],
+    originalHumanCards: [...bottomCards],
     muestraCard,
-    humanPlayedCard: null,
-    aiPlayedCard: null,
+    humanPlayedCard: null, // Reset played cards at the start of a new round
+    aiPlayedCard: null,    // Reset played cards at the start of a new round
     playedCards: [],
     phase: prev.roundState.humanStartsRound ? { type: 'HUMAN_TURN' } : { type: 'AI_TURN' },
     trucoState: { type: 'NONE', level: null, lastCaller: null },
+    envidoState: { type: 'NONE', lastCaller: null, humanPoints: 0, aiPoints: 0 },
     roundState: {
       humanStartsRound: !prev.roundState.humanStartsRound,
       lastTurnWinner: null,
@@ -73,10 +77,11 @@ export function getNextTurnState(prev: GameState): GameState {
   const playerPlaysFirst = isFirstTurnInRound 
     ? prev.roundState.humanStartsRound 
     : prev.roundState.lastTurnWinner === 'human';
+  
+  // Don't reset humanPlayedCard and aiPlayedCard to null
+  // This keeps the cards visible on the board until they are replaced
   return {
     ...prev,
-    humanPlayedCard: null,
-    aiPlayedCard: null,
     phase: playerPlaysFirst ? { type: 'HUMAN_TURN' } : { type: 'AI_TURN' },
     message: playerPlaysFirst ? '¡Tu turno! Selecciona una carta para jugar.' : 'Jugador CPU está pensando...',
   };

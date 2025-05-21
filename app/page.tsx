@@ -15,7 +15,9 @@ export default function Home() {
     handleNextTurn,
     handlePlayerCardSelect,
     handleTruco,
+    handleEnvido,
     handleTrucoResponse,
+    handleEnvidoResponse,
     nextTurnProgress
   } = useTrucoGame();
 
@@ -46,11 +48,21 @@ export default function Home() {
           <ActionButtons
             phase={gameState.phase}
             trucoState={gameState.trucoState}
+            envidoState={gameState.envidoState}
+            playedCards={gameState.playedCards}
+            humanPlayedCard={gameState.humanPlayedCard}
             nextTurnProgress={nextTurnProgress}
+            humanCards={gameState.humanCards}
+            aiCards={gameState.aiCards}
+            originalHumanCards={gameState.originalHumanCards}
+            originalAiCards={gameState.originalAiCards}
+            muestraCard={gameState.muestraCard}
             onNextRound={initializeGame}
             onNextTurn={handleNextTurn}
             onTruco={handleTruco}
+            onEnvido={handleEnvido}
             onTrucoResponse={handleTrucoResponse}
+            onEnvidoResponse={handleEnvidoResponse}
           />
         </div>
       </div>

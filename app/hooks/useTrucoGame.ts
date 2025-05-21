@@ -1,19 +1,22 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getInitialGameState, getEndRoundState, getNextTurnState, getPlayerCardSelectState } from '../utils/gameLogic';
-import { getAIDecision, getTrucoOfferAIDecision } from '../utils/aiUtils';
-import { determineWinner } from '../utils/gameUtils';
+import { getAIDecision, getTrucoOfferAIDecision, getEnvidoOfferAIDecision } from '../utils/aiUtils';
+import { determineWinner, hasFlor, calculateEnvidoPoints } from '../utils/gameUtils';
 import { GameState } from '../types/game';
 
 export function useTrucoGame() {
   const [gameState, setGameState] = useState<GameState>({
     aiCards: [],
     humanCards: [],
+    originalAiCards: [],
+    originalHumanCards: [],
     muestraCard: { number: 0, palo: 'oro' },
     humanPlayedCard: null,
     aiPlayedCard: null,
     playedCards: [],
     phase: { type: 'INITIAL' },
     trucoState: { type: 'NONE', level: null, lastCaller: null },
+    envidoState: { type: 'NONE', lastCaller: null, humanPoints: 0, aiPoints: 0 },
     roundState: {
       humanStartsRound: Math.random() < 0.5,
       lastTurnWinner: null,
@@ -55,8 +58,30 @@ export function useTrucoGame() {
         gameState.phase,
         gameState.trucoState,
         gameState.playedCards,
+        gameState.envidoState
       );
       setTimeout(() => {
+        // Check if AI wants to offer envido
+        if (aiDecision.wantsEnvido && gameState.playedCards.length === 0 && 
+            gameState.envidoState.type === 'NONE' && gameState.trucoState.type === 'NONE') {
+          // Calculate points for both players
+          const humanEnvidoPoints = calculateEnvidoPoints(gameState.originalHumanCards, gameState.muestraCard);
+          const aiEnvidoPoints = calculateEnvidoPoints(gameState.originalAiCards, gameState.muestraCard);
+          
+          setGameState(prev => ({
+            ...prev,
+            envidoState: { 
+              type: 'CALLED', 
+              lastCaller: 'AI',
+              humanPoints: humanEnvidoPoints,
+              aiPoints: aiEnvidoPoints 
+            },
+            message: 'El jugador CPU gritó envido! ¿Aceptás?'
+          }));
+          return;
+        }
+
+        // Check if AI wants to offer truco
         if (aiDecision.wantsTrucoAction && aiDecision.wantsTrucoAction.type !== 'NONE') {
           const level = aiDecision.wantsTrucoAction.type;
           setGameState(prev => ({
@@ -218,6 +243,101 @@ export function useTrucoGame() {
     }
   }, [gameState]);
 
+  const handleEnvido = useCallback(async () => {
+    // Can only offer envido in the first turn of a round and before truco
+    const isHumanTurn = gameState.phase.type === 'HUMAN_TURN';
+    const isEarlyInRound = gameState.playedCards.length === 0 || 
+                          (gameState.playedCards.length === 1 && gameState.humanPlayedCard === null);
+    const noEnvidoCalled = gameState.envidoState.type === 'NONE';
+    const noTrucoCalled = gameState.trucoState.type === 'NONE';
+
+    if (!isHumanTurn || !isEarlyInRound || !noEnvidoCalled || !noTrucoCalled) {
+      console.error('Error: Attempted to offer envido in invalid game state. This should not be possible.');
+      return;
+    }
+    
+    // Cannot offer envido when someone has flor - use original cards for accurate flor detection
+    const humanHasFlor = hasFlor(gameState.originalHumanCards, gameState.muestraCard);
+    const aiHasFlor = hasFlor(gameState.originalAiCards, gameState.muestraCard);
+    
+    if (humanHasFlor || aiHasFlor) {
+      console.error('Error: Attempted to offer envido when there is flor. This should not be possible.');
+      setGameState(prev => ({
+        ...prev,
+        message: 'No se puede cantar envido cuando hay flor.'
+      }));
+      return;
+    }
+
+    
+    // Calculate envido points - use original cards for accurate point calculation
+    const humanEnvidoPoints = calculateEnvidoPoints(gameState.originalHumanCards, gameState.muestraCard);
+    const aiEnvidoPoints = calculateEnvidoPoints(gameState.originalAiCards, gameState.muestraCard);
+    
+    setGameState(prev => ({
+      ...prev,
+      envidoState: { 
+        type: 'CALLED', 
+        lastCaller: 'HUMAN',
+        humanPoints: humanEnvidoPoints,
+        aiPoints: aiEnvidoPoints 
+      },
+      message: 'Gritaste envido! El jugador CPU está decidiendo...'
+    }));
+
+    const aiDecision = await getEnvidoOfferAIDecision(
+      gameState.originalAiCards,
+      gameState.originalHumanCards,
+      gameState.muestraCard,
+      gameState.playedCards,
+      gameState.roundState
+    );
+
+    if (aiDecision.action === 'accept') {
+      const humanPoints = calculateEnvidoPoints(gameState.originalHumanCards, gameState.muestraCard);
+      
+      setGameState(prev => ({
+        ...prev,
+        envidoState: { 
+          type: 'ACCEPTED', 
+          lastCaller: 'HUMAN', 
+          humanPoints: humanPoints,
+          aiPoints: aiDecision.points
+        },
+        phase: { type: 'SHOWING_ENVIDO_POINTS' },
+        message: `Jugador CPU aceptó envido! Tus puntos: ${humanPoints}, CPU puntos: ${aiDecision.points}`
+      }));
+
+      // Set a timeout to continue the game after showing envido points
+      setTimeout(() => {
+        setGameState(prev => {
+          const envidoWinner = prev.envidoState.humanPoints! > prev.envidoState.aiPoints! ? 'human' : 'ai';
+          return {
+            ...prev,
+            phase: { type: 'HUMAN_TURN' },
+            humanScore: envidoWinner === 'human' ? prev.humanScore + 2 : prev.humanScore,
+            aiScore: envidoWinner === 'ai' ? prev.aiScore + 2 : prev.aiScore,
+            message: envidoWinner === 'human' ? 
+              'Ganaste el envido! +2 puntos. Te toca jugar.' : 
+              'El jugador CPU ganó el envido! +2 puntos. Te toca jugar.'
+          };
+        });
+      }, 3000);
+    } else {
+      setGameState(prev => ({
+        ...prev,
+        envidoState: { 
+          type: 'REJECTED', 
+          lastCaller: 'HUMAN',
+          humanPoints: 0,
+          aiPoints: 0
+        },
+        message: 'Jugador CPU rechazó envido! Tú recibes 1 punto.',
+        humanScore: prev.humanScore + 1
+      }));
+    }
+  }, [gameState]);
+
   const handleTrucoResponse = useCallback((action: 'accept' | 'reject' | 'escalate') => {
     setGameState(prev => {
       if (prev.trucoState.type !== 'CALLED' || !prev.trucoState.level) return prev;
@@ -346,6 +466,67 @@ export function useTrucoGame() {
     }
   }, [endRound, gameState]);
 
+  const handleEnvidoResponse = useCallback((action: 'accept' | 'reject') => {
+    if (gameState.envidoState.type !== 'CALLED' || gameState.envidoState.lastCaller !== 'AI') return;
+    
+    if (action === 'accept') {
+      const humanPoints = calculateEnvidoPoints(gameState.originalHumanCards, gameState.muestraCard);
+      
+      // Make AI calculate its points
+      (async () => {
+        const aiDecision = await getEnvidoOfferAIDecision(
+          gameState.originalAiCards,
+          gameState.originalHumanCards,
+          gameState.muestraCard,
+          gameState.playedCards,
+          gameState.roundState
+        );
+        
+        const aiPoints = aiDecision.points;
+        
+        setGameState(prev => ({
+          ...prev,
+          envidoState: { 
+            type: 'ACCEPTED', 
+            lastCaller: 'AI', 
+            humanPoints: humanPoints,
+            aiPoints: aiPoints
+          },
+          phase: { type: 'SHOWING_ENVIDO_POINTS' },
+          message: `Aceptaste envido! Tus puntos: ${humanPoints}, CPU puntos: ${aiPoints}`
+        }));
+        
+        // Set a timeout to continue the game after showing envido points
+        setTimeout(() => {
+          setGameState(prev => {
+            const envidoWinner = prev.envidoState.humanPoints! > prev.envidoState.aiPoints! ? 'human' : 'ai';
+            return {
+              ...prev,
+              phase: { type: 'HUMAN_TURN' },
+              humanScore: envidoWinner === 'human' ? prev.humanScore + 2 : prev.humanScore,
+              aiScore: envidoWinner === 'ai' ? prev.aiScore + 2 : prev.aiScore,
+              message: envidoWinner === 'human' ? 
+                'Ganaste el envido! +2 puntos. Te toca jugar.' : 
+                'El jugador CPU ganó el envido! +2 puntos. Te toca jugar.'
+            };
+          });
+        }, 3000);
+      })();
+    } else {
+      setGameState(prev => ({
+        ...prev,
+        envidoState: { 
+          type: 'REJECTED', 
+          lastCaller: 'AI',
+          humanPoints: 0,
+          aiPoints: 0
+        },
+        message: 'Rechazaste envido! El jugador CPU recibe 1 punto.',
+        aiScore: prev.aiScore + 1
+      }));
+    }
+  }, [gameState]);
+
   useEffect(() => {
     if (gameState.phase.type === 'AI_TURN' && gameState.trucoState.type !== 'CALLED') {
       handleAITurn();
@@ -400,7 +581,9 @@ export function useTrucoGame() {
     handlePlayerCardSelect,
     handleAITurn,
     handleTruco,
+    handleEnvido,
     handleTrucoResponse,
+    handleEnvidoResponse,
     nextTurnProgress
   };
 } 

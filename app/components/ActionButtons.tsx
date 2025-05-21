@@ -1,25 +1,59 @@
 import React from 'react';
 import { GameState } from '../types/game';
+import { hasFlor } from '../utils/gameUtils';
 
 interface ActionButtonsProps {
   phase: GameState['phase'];
   trucoState: GameState['trucoState'];
+  envidoState: GameState['envidoState'];
+  playedCards: GameState['playedCards'];
+  humanPlayedCard: GameState['humanPlayedCard'];
   nextTurnProgress: number;
+  humanCards: GameState['humanCards'];
+  aiCards: GameState['aiCards'];
+  originalHumanCards: GameState['originalHumanCards'];
+  originalAiCards: GameState['originalAiCards'];
+  muestraCard: GameState['muestraCard'];
   onNextRound: () => void;
   onNextTurn: () => void;
   onTruco: () => void;
+  onEnvido: () => void;
   onTrucoResponse: (action: 'accept' | 'reject' | 'escalate') => void;
+  onEnvidoResponse: (action: 'accept' | 'reject') => void;
 }
 
 const ActionButtons: React.FC<ActionButtonsProps> = ({
   phase,
   trucoState,
+  envidoState,
+  playedCards,
+  humanPlayedCard,
   nextTurnProgress,
+  humanCards,
+  aiCards,
+  originalHumanCards,
+  originalAiCards,
+  muestraCard,
   onNextRound,
   onNextTurn,
   onTruco,
-  onTrucoResponse
-}) => (
+  onEnvido,
+  onTrucoResponse,
+  onEnvidoResponse
+}) => {
+  // Helper function to determine if Envido button should be shown
+  const canShowEnvidoButton = () => {
+    const isHumanTurn = phase.type === 'HUMAN_TURN';
+    const isEarlyInRound = playedCards.length === 0 || (playedCards.length === 1 && humanPlayedCard === null);
+    const noEnvidoCalled = envidoState.type === 'NONE';
+    const noTrucoCalled = trucoState.type === 'NONE';
+    // Use original cards for flor calculation to handle cases where cards have been played
+    const noFlor = !hasFlor(originalHumanCards, muestraCard) && !hasFlor(originalAiCards, muestraCard);
+    
+    return isHumanTurn && isEarlyInRound && noEnvidoCalled && noTrucoCalled && noFlor;
+  };
+
+  return (
   <div className="flex flex-col gap-4 items-center">
     {phase.type === 'ROUND_END' && (
       <button 
@@ -47,8 +81,36 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         Siguiente Turno
       </button>
     )}
+    {/* Envido action button */}
+    {canShowEnvidoButton() && (
+      <div className="flex gap-4 w-full justify-center">
+        <button
+          onClick={onEnvido}
+          className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-full w-full cursor-pointer"
+        >
+          Envido
+        </button>
+      </div>
+    )}
+    {/* Envido response buttons */}
+    {envidoState.type === 'CALLED' && envidoState.lastCaller === 'AI' && (
+      <div className="flex gap-4 w-full justify-center">
+        <button
+          onClick={() => onEnvidoResponse('accept')}
+          className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-full w-full cursor-pointer"
+        >
+          Quiero
+        </button>
+        <button
+          onClick={() => onEnvidoResponse('reject')}
+          className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-full w-full cursor-pointer"
+        >
+          No Quiero
+        </button>
+      </div>
+    )}
     {/* Truco action buttons */}
-    {phase.type === 'HUMAN_TURN' && (
+    {phase.type === 'HUMAN_TURN' && envidoState.type !== 'CALLED' && (
       <div className="flex gap-4 w-full justify-center">
         {trucoState.type === 'NONE' && trucoState.lastCaller !== 'HUMAN' && (
           <button
@@ -77,7 +139,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
       </div>
     )}
     {/* Truco response buttons */}
-    {trucoState.type === 'CALLED' && trucoState.lastCaller === 'AI' && (
+    {trucoState.type === 'CALLED' && trucoState.lastCaller === 'AI' && envidoState.type !== 'CALLED' && (
       <div className="flex gap-4 w-full justify-center">
         <button
           onClick={() => onTrucoResponse('accept')}
@@ -106,6 +168,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
       </div>
     )}
   </div>
-);
+  );
+};
 
 export default ActionButtons; 

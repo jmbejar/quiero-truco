@@ -5,6 +5,7 @@ export interface AIDecision {
   cardIndex: number;
   explanation: string;
   wantsTrucoAction?: AvailableTrucoAction;  // specifies which truco action the AI wants to call
+  wantsEnvido?: boolean;  // specifies if the AI wants to offer envido
 }
 
 export interface TrucoOfferAIDecision {
@@ -12,9 +13,15 @@ export interface TrucoOfferAIDecision {
   explanation: string;
 }
 
+export interface EnvidoOfferAIDecision {
+  action: 'accept' | 'reject';
+  explanation: string;
+  points: number;
+}
+
 export async function getAIDecision(
-playerPlayedCard: CardProps | null, opponentCards: CardProps[], middleCard: CardProps, gamePhase: GamePhase, trucoState: TrucoState, playedCards: CardProps[] = []): Promise<AIDecision> {
-  console.log('getAIDecision called with:', { playerPlayedCard, opponentCards, middleCard, gamePhase, trucoState, playedCards });
+playerPlayedCard: CardProps | null, opponentCards: CardProps[], middleCard: CardProps, gamePhase: GamePhase, trucoState: TrucoState, playedCards: CardProps[] = [], envidoState: any = { type: 'NONE' }): Promise<AIDecision> {
+  console.log('getAIDecision called with:', { playerPlayedCard, opponentCards, middleCard, gamePhase, trucoState, playedCards, envidoState });
   
   // Determine what truco-related actions are available
   const availableTrucoAction: AvailableTrucoAction = (() => {
@@ -108,6 +115,46 @@ export async function getTrucoOfferAIDecision(
     return {
       action: Math.random() < 0.5 ? 'accept' : 'reject',
       explanation: 'Random choice due to API error',
+    };
+  }
+}
+
+export async function getEnvidoOfferAIDecision(
+  aiCards: CardProps[],
+  humanCards: CardProps[],
+  muestraCard: CardProps,
+  playedCards: CardProps[],
+  roundState: RoundState
+): Promise<EnvidoOfferAIDecision> {
+  try {
+    const response = await fetch('/api/ai/envido-offer', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        aiCards,
+        humanCards,
+        muestraCard,
+        playedCards,
+        roundState,
+      }),
+    });
+    if (!response.ok) {
+      throw new Error('Failed to get envido offer decision');
+    }
+    const data = await response.json();
+    if (!data.decision) {
+      throw new Error('No decision returned from AI API');
+    }
+    return data.decision;
+  } catch (error) {
+    console.error('Error in getEnvidoOfferAIDecision:', error);
+    // Fallback: random accept/reject with randomly generated points
+    return {
+      action: Math.random() < 0.5 ? 'accept' : 'reject',
+      explanation: 'Random choice due to API error',
+      points: Math.floor(Math.random() * 33)
     };
   }
 }
