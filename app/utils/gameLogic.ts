@@ -6,9 +6,10 @@ function processFlorAndComposeMessage(
   bottomCards: Card[],
   topCards: Card[],
   humanStartsRound: boolean,
+  muestraCard: Card
 ): { humanHasFlor: boolean; aiHasFlor: boolean; initialMessage: string } {
-  const humanHasFlor = hasFlor(bottomCards);
-  const aiHasFlor = hasFlor(topCards);
+  const humanHasFlor = hasFlor(bottomCards, muestraCard);
+  const aiHasFlor = hasFlor(topCards, muestraCard);
 
   let initialMessage = humanStartsRound ? '¡Tu turno! Selecciona una carta para jugar.' : 'Jugador CPU está pensando...';
 
@@ -34,6 +35,7 @@ export function getInitialGameState(prev: GameState): GameState {
     bottomCards,
     topCards,
     prev.roundState.humanStartsRound,
+    muestraCard
   );
 
   return {
