@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { CardProps } from '@/app/components/Card';
+import { hasFlor } from '@/app/utils/gameUtils';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -12,9 +13,9 @@ export async function POST(request: Request) {
   
   try {
     const body = await request.json();
-    const { playerPlayedCard, opponentCards, middleCard, gameState, trucoState, playedCards, availableTrucoAction } = body;
+    const { playerPlayedCard, opponentCards, middleCard, gamePhase, trucoState, playedCards, availableTrucoAction, envidoState } = body;
     
-    console.log('Request body:', { playerPlayedCard, opponentCards, middleCard, gameState, trucoState, playedCards, availableTrucoAction });
+    console.log('Request body:', { playerPlayedCard, opponentCards, middleCard, gamePhase, trucoState, playedCards, availableTrucoAction, envidoState });
     console.log('OpenAI API Key available:', !!process.env.OPENAI_API_KEY);
 
     // Check if API key is missing
@@ -32,12 +33,23 @@ export async function POST(request: Request) {
       );
     }
 
+    // Determine if AI should offer envido
+    const canOfferEnvido = 
+      playedCards.length === 0 && 
+      envidoState.type === 'NONE' && 
+      trucoState.type === 'NONE' && 
+      !hasFlor(opponentCards, middleCard);
+    
+    // Randomly decide to offer envido (30% chance if eligible)
+    const shouldOfferEnvido = canOfferEnvido && Math.random() < 0.3;
+
     // Create a prompt that describes the current game state
     const prompt = `
       Estás jugando Truco Uruguayo con muestra. Aquí está el estado actual del juego:
       
       Recuerda que el objetivo es ganar la ronda (dos turnos) así que puede convenir o no jugar la carta más fuerte.
       ${availableTrucoAction.type !== 'NONE' && trucoState.lastCaller !== 'ai' ? `A su vez, puedes intentar decir ${availableTrucoAction.type.toLowerCase()} si te conviene, porque asigna más puntos y tu objetivo es ganar todos los puntos posibles.` : ''}
+      ${canOfferEnvido ? 'También puedes ofrecer "envido" antes de jugar tu primera carta (el ganador obtiene 2 puntos, o 1 punto si es rechazado).' : ''}
 
       Te recordaré como se define qué carta gana en cada ronda. Se compara según el valor de las cartas, que es el siguiente (en orden de fuerza decreciente):
       - El 2, 4, 5, 10 y 11 con el mismo palo que la carta de la muestra son las más fuertes en ese orden.
@@ -65,17 +77,17 @@ export async function POST(request: Request) {
         return `Mano ${Math.floor(index/2) + 1}: ${isPlayerCard ? 'Jugador' : 'AI'} jugó ${JSON.stringify(card)}`;
       }).join('\n') : 'No se han jugado manos en esta ronda'}
       
-      Estado del juego: ${gameState || 'Reparto inicial'}
+      Estado del juego: ${gamePhase || 'Reparto inicial'}
       
-      Basado en esta información, ¿qué carta jugarías y por qué?${availableTrucoAction.type !== 'NONE' && trucoState.lastCaller !== 'ai' ? ` También debes decidir si quieres decir "${availableTrucoAction.type}" o no.` : ''}
+      Basado en esta información, ¿qué carta jugarías y por qué?${availableTrucoAction.type !== 'NONE' && trucoState.lastCaller !== 'ai' ? ` También debes decidir si quieres decir "${availableTrucoAction.type}" o no.` : ''}${canOfferEnvido ? ' También debes decidir si quieres ofrecer "envido" o no.' : ''}
       Responde con un objeto JSON que contenga:
       1. La carta que quieres jugar (índice de la carta en tu mano, 0-2)
-      2. Una breve explicación de tu estrategia${availableTrucoAction.type !== 'NONE' && trucoState.lastCaller !== 'ai' ? `\\n      3. Si quieres decir "${availableTrucoAction.type}" o no (wantsTrucoAction: "${availableTrucoAction.type}" o null)` : ''}
+      2. Una breve explicación de tu estrategia${availableTrucoAction.type !== 'NONE' && trucoState.lastCaller !== 'ai' ? `\\n      3. Si quieres decir "${availableTrucoAction.type}" o no (wantsTrucoAction: "${availableTrucoAction.type}" o null)` : ''}${canOfferEnvido ? '\\n      ' + (availableTrucoAction.type !== 'NONE' && trucoState.lastCaller !== 'ai' ? '4' : '3') + '. Si quieres ofrecer "envido" o no (wantsEnvido: true o false)' : ''}
       
       Ejemplo de respuesta:
       {
         "cardIndex": 1,
-        "explanation": "Estoy jugando el 7 de oro porque es una carta fuerte que puede ganar esta ronda."${availableTrucoAction.type !== 'NONE' && trucoState.lastCaller !== 'ai' ? `,\\n        "wantsTrucoAction": "${availableTrucoAction.type}"` : ''}
+        "explanation": "Estoy jugando el 7 de oro porque es una carta fuerte que puede ganar esta ronda."${availableTrucoAction.type !== 'NONE' && trucoState.lastCaller !== 'ai' ? `,\\n        "wantsTrucoAction": "${availableTrucoAction.type}"` : ''}${canOfferEnvido ? ',\\n        "wantsEnvido": true' : ''}
       }
     `;
 
@@ -105,6 +117,11 @@ export async function POST(request: Request) {
         } else {
           parsedDecision.wantsTrucoAction = { type: 'NONE' };
         }
+        
+        // Force envido offer if we decided to do so earlier
+        if (shouldOfferEnvido) {
+          parsedDecision.wantsEnvido = true;
+        }
       } catch (parseError) {
         console.error('Error parsing AI response:', parseError);
         console.log('Raw AI response:', aiDecision);
@@ -112,7 +129,8 @@ export async function POST(request: Request) {
         // Fallback if parsing fails
         parsedDecision = {
           cardIndex: Math.floor(Math.random() * opponentCards.length),
-          explanation: 'Random choice (parsing error)'
+          explanation: 'Random choice (parsing error)',
+          wantsEnvido: shouldOfferEnvido
         };
       }
       
@@ -125,7 +143,8 @@ export async function POST(request: Request) {
         error: 'OpenAI API error',
         decision: {
           cardIndex: Math.floor(Math.random() * opponentCards.length),
-          explanation: 'Random choice (OpenAI API error)'
+          explanation: 'Random choice (OpenAI API error)',
+          wantsEnvido: shouldOfferEnvido
         }
       });
     }

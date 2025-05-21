@@ -12,6 +12,7 @@ interface ActionButtonsProps {
   onTruco: () => void;
   onEnvido: () => void;
   onTrucoResponse: (action: 'accept' | 'reject' | 'escalate') => void;
+  onEnvidoResponse: (action: 'accept' | 'reject') => void;
 }
 
 const ActionButtons: React.FC<ActionButtonsProps> = ({
@@ -24,7 +25,8 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   onNextTurn,
   onTruco,
   onEnvido,
-  onTrucoResponse
+  onTrucoResponse,
+  onEnvidoResponse
 }) => (
   <div className="flex flex-col gap-4 items-center">
     {phase.type === 'ROUND_END' && (
@@ -64,8 +66,25 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         </button>
       </div>
     )}
+    {/* Envido response buttons */}
+    {envidoState.type === 'CALLED' && envidoState.lastCaller === 'AI' && (
+      <div className="flex gap-4 w-full justify-center">
+        <button
+          onClick={() => onEnvidoResponse('accept')}
+          className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-full w-full cursor-pointer"
+        >
+          Quiero
+        </button>
+        <button
+          onClick={() => onEnvidoResponse('reject')}
+          className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-full w-full cursor-pointer"
+        >
+          No Quiero
+        </button>
+      </div>
+    )}
     {/* Truco action buttons */}
-    {phase.type === 'HUMAN_TURN' && (
+    {phase.type === 'HUMAN_TURN' && envidoState.type !== 'CALLED' && (
       <div className="flex gap-4 w-full justify-center">
         {trucoState.type === 'NONE' && trucoState.lastCaller !== 'HUMAN' && (
           <button
@@ -94,7 +113,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
       </div>
     )}
     {/* Truco response buttons */}
-    {trucoState.type === 'CALLED' && trucoState.lastCaller === 'AI' && (
+    {trucoState.type === 'CALLED' && trucoState.lastCaller === 'AI' && envidoState.type !== 'CALLED' && (
       <div className="flex gap-4 w-full justify-center">
         <button
           onClick={() => onTrucoResponse('accept')}

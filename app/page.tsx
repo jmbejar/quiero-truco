@@ -17,6 +17,7 @@ export default function Home() {
     handleTruco,
     handleEnvido,
     handleTrucoResponse,
+    handleEnvidoResponse,
     nextTurnProgress
   } = useTrucoGame();
 
@@ -55,6 +56,7 @@ export default function Home() {
             onTruco={handleTruco}
             onEnvido={handleEnvido}
             onTrucoResponse={handleTrucoResponse}
+            onEnvidoResponse={handleEnvidoResponse}
           />
         </div>
       </div>
