@@ -38,9 +38,12 @@ export function getInitialGameState(prev: GameState): GameState {
     muestraCard
   );
 
+  // Ensure original cards are also initialized and used correctly for flor calculation
   return {
     aiCards: topCards,
     humanCards: bottomCards,
+    originalAiCards: [...topCards],
+    originalHumanCards: [...bottomCards],
     muestraCard,
     humanPlayedCard: null,
     aiPlayedCard: null,

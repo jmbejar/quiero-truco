@@ -50,6 +50,8 @@ export type GameState = {
   // Core game state
   aiCards: Card[];
   humanCards: Card[];
+  originalAiCards: Card[];    // Original 3 cards dealt to AI (for flor calculation)
+  originalHumanCards: Card[]; // Original 3 cards dealt to human (for flor calculation)
   muestraCard: Card;
   humanPlayedCard: Card | null;
   aiPlayedCard: Card | null;

@@ -5,6 +5,7 @@ export interface AIDecision {
   cardIndex: number;
   explanation: string;
   wantsTrucoAction?: AvailableTrucoAction;  // specifies which truco action the AI wants to call
+  wantsEnvido?: boolean;  // specifies if the AI wants to offer envido
 }
 
 export interface TrucoOfferAIDecision {
@@ -19,8 +20,8 @@ export interface EnvidoOfferAIDecision {
 }
 
 export async function getAIDecision(
-playerPlayedCard: CardProps | null, opponentCards: CardProps[], middleCard: CardProps, gamePhase: GamePhase, trucoState: TrucoState, playedCards: CardProps[] = []): Promise<AIDecision> {
-  console.log('getAIDecision called with:', { playerPlayedCard, opponentCards, middleCard, gamePhase, trucoState, playedCards });
+playerPlayedCard: CardProps | null, opponentCards: CardProps[], middleCard: CardProps, gamePhase: GamePhase, trucoState: TrucoState, playedCards: CardProps[] = [], envidoState: any = { type: 'NONE' }): Promise<AIDecision> {
+  console.log('getAIDecision called with:', { playerPlayedCard, opponentCards, middleCard, gamePhase, trucoState, playedCards, envidoState });
   
   // Determine what truco-related actions are available
   const availableTrucoAction: AvailableTrucoAction = (() => {

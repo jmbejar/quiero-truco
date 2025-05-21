@@ -8,6 +8,8 @@ export function useTrucoGame() {
   const [gameState, setGameState] = useState<GameState>({
     aiCards: [],
     humanCards: [],
+    originalAiCards: [],
+    originalHumanCards: [],
     muestraCard: { number: 0, palo: 'oro' },
     humanPlayedCard: null,
     aiPlayedCard: null,
@@ -62,6 +64,10 @@ export function useTrucoGame() {
         // Check if AI wants to offer envido
         if (aiDecision.wantsEnvido && gameState.playedCards.length === 0 && 
             gameState.envidoState.type === 'NONE' && gameState.trucoState.type === 'NONE') {
+          // Calculate points for both players
+          const humanEnvidoPoints = calculateEnvidoPoints(gameState.originalHumanCards, gameState.muestraCard);
+          const aiEnvidoPoints = calculateEnvidoPoints(gameState.originalAiCards, gameState.muestraCard);
+          
           setGameState(prev => ({
             ...prev,
             envidoState: { 
@@ -247,9 +253,9 @@ export function useTrucoGame() {
       return;
     }
     
-    // Cannot offer envido when someone has flor
-    const humanHasFlor = hasFlor(gameState.humanCards, gameState.muestraCard);
-    const aiHasFlor = hasFlor(gameState.aiCards, gameState.muestraCard);
+    // Cannot offer envido when someone has flor - use original cards for accurate flor detection
+    const humanHasFlor = hasFlor(gameState.originalHumanCards, gameState.muestraCard);
+    const aiHasFlor = hasFlor(gameState.originalAiCards, gameState.muestraCard);
     
     if (humanHasFlor || aiHasFlor) {
       console.error('Error: Attempted to offer envido when there is flor. This should not be possible.');

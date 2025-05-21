@@ -11,6 +11,8 @@ interface ActionButtonsProps {
   nextTurnProgress: number;
   humanCards: GameState['humanCards'];
   aiCards: GameState['aiCards'];
+  originalHumanCards: GameState['originalHumanCards'];
+  originalAiCards: GameState['originalAiCards'];
   muestraCard: GameState['muestraCard'];
   onNextRound: () => void;
   onNextTurn: () => void;
@@ -29,6 +31,8 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   nextTurnProgress,
   humanCards,
   aiCards,
+  originalHumanCards,
+  originalAiCards,
   muestraCard,
   onNextRound,
   onNextTurn,
@@ -43,7 +47,8 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
     const isEarlyInRound = playedCards.length === 0 || (playedCards.length === 1 && humanPlayedCard === null);
     const noEnvidoCalled = envidoState.type === 'NONE';
     const noTrucoCalled = trucoState.type === 'NONE';
-    const noFlor = !hasFlor(humanCards, muestraCard) && !hasFlor(aiCards, muestraCard);
+    // Use original cards for flor calculation to handle cases where cards have been played
+    const noFlor = !hasFlor(originalHumanCards, muestraCard) && !hasFlor(originalAiCards, muestraCard);
     
     return isHumanTurn && isEarlyInRound && noEnvidoCalled && noTrucoCalled && noFlor;
   };
