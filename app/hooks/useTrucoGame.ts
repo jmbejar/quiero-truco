@@ -245,10 +245,13 @@ export function useTrucoGame() {
 
   const handleEnvido = useCallback(async () => {
     // Can only offer envido in the first turn of a round and before truco
-    if (gameState.phase.type !== 'HUMAN_TURN' || 
-        gameState.playedCards.length > 0 || 
-        gameState.trucoState.type !== 'NONE' ||
-        gameState.envidoState.type !== 'NONE') {
+    const isHumanTurn = gameState.phase.type === 'HUMAN_TURN';
+    const isEarlyInRound = gameState.playedCards.length === 0 || 
+                          (gameState.playedCards.length === 1 && gameState.humanPlayedCard === null);
+    const noEnvidoCalled = gameState.envidoState.type === 'NONE';
+    const noTrucoCalled = gameState.trucoState.type === 'NONE';
+
+    if (!isHumanTurn || !isEarlyInRound || !noEnvidoCalled || !noTrucoCalled) {
       console.error('Error: Attempted to offer envido in invalid game state. This should not be possible.');
       return;
     }
@@ -267,9 +270,9 @@ export function useTrucoGame() {
     }
 
     
-    // Calculate envido points
-    const humanEnvidoPoints = calculateEnvidoPoints(gameState.humanCards, gameState.muestraCard);
-    const aiEnvidoPoints = calculateEnvidoPoints(gameState.aiCards, gameState.muestraCard);
+    // Calculate envido points - use original cards for accurate point calculation
+    const humanEnvidoPoints = calculateEnvidoPoints(gameState.originalHumanCards, gameState.muestraCard);
+    const aiEnvidoPoints = calculateEnvidoPoints(gameState.originalAiCards, gameState.muestraCard);
     
     setGameState(prev => ({
       ...prev,
@@ -291,7 +294,7 @@ export function useTrucoGame() {
     );
 
     if (aiDecision.action === 'accept') {
-      const humanPoints = calculateEnvidoPoints(gameState.humanCards, gameState.muestraCard);
+      const humanPoints = calculateEnvidoPoints(gameState.originalHumanCards, gameState.muestraCard);
       
       setGameState(prev => ({
         ...prev,
@@ -326,8 +329,8 @@ export function useTrucoGame() {
         envidoState: { 
           type: 'REJECTED', 
           lastCaller: 'HUMAN',
-          humanPoints: calculateEnvidoPoints(gameState.humanCards, gameState.muestraCard),
-          aiPoints: calculateEnvidoPoints(gameState.aiCards, gameState.muestraCard)
+          humanPoints: calculateEnvidoPoints(gameState.originalHumanCards, gameState.muestraCard),
+          aiPoints: calculateEnvidoPoints(gameState.originalAiCards, gameState.muestraCard)
         },
         message: 'Jugador CPU rechazó envido! Tú recibes 1 punto.',
         humanScore: prev.humanScore + 1
@@ -467,7 +470,7 @@ export function useTrucoGame() {
     if (gameState.envidoState.type !== 'CALLED' || gameState.envidoState.lastCaller !== 'AI') return;
     
     if (action === 'accept') {
-      const humanPoints = calculateEnvidoPoints(gameState.humanCards, gameState.muestraCard);
+      const humanPoints = calculateEnvidoPoints(gameState.originalHumanCards, gameState.muestraCard);
       
       // Make AI calculate its points
       (async () => {
@@ -515,8 +518,8 @@ export function useTrucoGame() {
         envidoState: { 
           type: 'REJECTED', 
           lastCaller: 'AI',
-          humanPoints: calculateEnvidoPoints(gameState.humanCards, gameState.muestraCard),
-          aiPoints: calculateEnvidoPoints(gameState.aiCards, gameState.muestraCard)
+          humanPoints: calculateEnvidoPoints(gameState.originalHumanCards, gameState.muestraCard),
+          aiPoints: calculateEnvidoPoints(gameState.originalAiCards, gameState.muestraCard)
         },
         message: 'Rechazaste envido! El jugador CPU recibe 1 punto.',
         aiScore: prev.aiScore + 1
