@@ -38,14 +38,44 @@ const getSpecialCardRank = (card: CardProps): number => {
 };
 
 /**
- * Checks if the given cards constitute a "flor" (all cards have the same suit)
+ * Checks if the given cards constitute a "flor" according to Uruguayan truco rules
  * @param cards The cards to check
- * @returns True if all cards have the same suit
+ * @param muestraCard The muestra card for special flor rules (optional)
+ * @returns True if the cards constitute a flor
  */
-export const hasFlor = (cards: CardProps[]): boolean => {
+export const hasFlor = (cards: CardProps[], muestraCard?: CardProps): boolean => {
   if (cards.length === 0) return false;
+  
+  // Traditional flor: all cards have the same suit
   const firstSuit = cards[0].palo;
-  return cards.every(card => card.palo === firstSuit);
+  const allSameSuit = cards.every(card => card.palo === firstSuit);
+  if (allSameSuit) return true;
+  
+  // Special cases for Uruguayan truco with muestra
+  if (!muestraCard) return false;
+  
+  // Count special cards with the same suit as muestra
+  const muestraSuit = muestraCard.palo;
+  const specialMuestraCards = cards.filter(card => 
+    card.palo === muestraSuit && ENVIDO_CARDS.includes(card.number)
+  );
+  
+  // Special case 1: Two or more special cards with muestra suit
+  if (specialMuestraCards.length >= 2) return true;
+  
+  // Special case 2: One special card with muestra suit, and remaining cards have the same suit
+  if (specialMuestraCards.length === 1) {
+    const remainingCards = cards.filter(card => 
+      !(card.palo === muestraSuit && ENVIDO_CARDS.includes(card.number))
+    );
+    
+    if (remainingCards.length > 0) {
+      const remainingSuit = remainingCards[0].palo;
+      return remainingCards.every(card => card.palo === remainingSuit);
+    }
+  }
+  
+  return false;
 };
 
 export const determineWinner = (playerCard: CardProps, aiCard: CardProps, muestraCard: CardProps): boolean => {
