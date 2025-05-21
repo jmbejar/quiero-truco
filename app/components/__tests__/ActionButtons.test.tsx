@@ -9,10 +9,13 @@ describe('ActionButtons', () => {
       <ActionButtons
         phase={{ type: 'ROUND_END' }}
         trucoState={{ type: 'NONE', level: null, lastCaller: null }}
-        envidoState={{ type: 'NONE', lastCaller: null }}
+        envidoState={{ type: 'NONE', lastCaller: null, humanPoints: 0, aiPoints: 0 }}
         playedCards={[]}
         humanPlayedCard={null}
         nextTurnProgress={0}
+        humanCards={[]}
+        aiCards={[]}
+        muestraCard={{ number: 1, palo: 'oro' }}
         onNextRound={onNextRound}
         onNextTurn={jest.fn()}
         onTruco={jest.fn()}

@@ -1,5 +1,6 @@
 import React from 'react';
 import { GameState } from '../types/game';
+import { hasFlor } from '../utils/gameUtils';
 
 interface ActionButtonsProps {
   phase: GameState['phase'];
@@ -8,6 +9,9 @@ interface ActionButtonsProps {
   playedCards: GameState['playedCards'];
   humanPlayedCard: GameState['humanPlayedCard'];
   nextTurnProgress: number;
+  humanCards: GameState['humanCards'];
+  aiCards: GameState['aiCards'];
+  muestraCard: GameState['muestraCard'];
   onNextRound: () => void;
   onNextTurn: () => void;
   onTruco: () => void;
@@ -23,13 +27,28 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   playedCards,
   humanPlayedCard,
   nextTurnProgress,
+  humanCards,
+  aiCards,
+  muestraCard,
   onNextRound,
   onNextTurn,
   onTruco,
   onEnvido,
   onTrucoResponse,
   onEnvidoResponse
-}) => (
+}) => {
+  // Helper function to determine if Envido button should be shown
+  const canShowEnvidoButton = () => {
+    const isHumanTurn = phase.type === 'HUMAN_TURN';
+    const isEarlyInRound = playedCards.length === 0 || (playedCards.length === 1 && humanPlayedCard === null);
+    const noEnvidoCalled = envidoState.type === 'NONE';
+    const noTrucoCalled = trucoState.type === 'NONE';
+    const noFlor = !hasFlor(humanCards, muestraCard) && !hasFlor(aiCards, muestraCard);
+    
+    return isHumanTurn && isEarlyInRound && noEnvidoCalled && noTrucoCalled && noFlor;
+  };
+
+  return (
   <div className="flex flex-col gap-4 items-center">
     {phase.type === 'ROUND_END' && (
       <button 
@@ -58,7 +77,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
       </button>
     )}
     {/* Envido action button */}
-    {phase.type === 'HUMAN_TURN' && (playedCards.length === 0 || (playedCards.length === 1 && humanPlayedCard === null)) && envidoState.type === 'NONE' && trucoState.type === 'NONE' && (
+    {canShowEnvidoButton() && (
       <div className="flex gap-4 w-full justify-center">
         <button
           onClick={onEnvido}
@@ -144,6 +163,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
       </div>
     )}
   </div>
-);
+  );
+};
 
 export default ActionButtons; 

@@ -32,8 +32,8 @@ export type TrucoState = {
 export type EnvidoState = {
   type: 'NONE' | 'CALLED' | 'ACCEPTED' | 'REJECTED';
   lastCaller: 'HUMAN' | 'AI' | null;
-  humanPoints?: number;
-  aiPoints?: number;
+  humanPoints: number;
+  aiPoints: number;
 };
 
 // Round State

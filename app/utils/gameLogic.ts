@@ -47,7 +47,7 @@ export function getInitialGameState(prev: GameState): GameState {
     playedCards: [],
     phase: prev.roundState.humanStartsRound ? { type: 'HUMAN_TURN' } : { type: 'AI_TURN' },
     trucoState: { type: 'NONE', level: null, lastCaller: null },
-    envidoState: { type: 'NONE', lastCaller: null },
+    envidoState: { type: 'NONE', lastCaller: null, humanPoints: 0, aiPoints: 0 },
     roundState: {
       humanStartsRound: !prev.roundState.humanStartsRound,
       lastTurnWinner: null,

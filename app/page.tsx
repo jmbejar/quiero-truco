@@ -52,6 +52,9 @@ export default function Home() {
             playedCards={gameState.playedCards}
             humanPlayedCard={gameState.humanPlayedCard}
             nextTurnProgress={nextTurnProgress}
+            humanCards={gameState.humanCards}
+            aiCards={gameState.aiCards}
+            muestraCard={gameState.muestraCard}
             onNextRound={initializeGame}
             onNextTurn={handleNextTurn}
             onTruco={handleTruco}

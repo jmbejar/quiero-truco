@@ -40,8 +40,8 @@ export async function POST(request: Request) {
       trucoState.type === 'NONE' && 
       !hasFlor(opponentCards, middleCard);
     
-    // Randomly decide to offer envido (30% chance if eligible)
-    const shouldOfferEnvido = canOfferEnvido && Math.random() < 0.3;
+    // The LLM will decide whether to offer envido or not
+    const shouldOfferEnvido = false; // Initial value, will be set by LLM decision
 
     // Create a prompt that describes the current game state
     const prompt = `
@@ -118,9 +118,11 @@ export async function POST(request: Request) {
           parsedDecision.wantsTrucoAction = { type: 'NONE' };
         }
         
-        // Force envido offer if we decided to do so earlier
-        if (shouldOfferEnvido) {
+        // Let the LLM's decision determine whether to offer envido
+        if (parsedDecision?.wantsEnvido && canOfferEnvido) {
           parsedDecision.wantsEnvido = true;
+        } else {
+          parsedDecision.wantsEnvido = false;
         }
       } catch (parseError) {
         console.error('Error parsing AI response:', parseError);

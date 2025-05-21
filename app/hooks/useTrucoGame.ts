@@ -14,7 +14,7 @@ export function useTrucoGame() {
     playedCards: [],
     phase: { type: 'INITIAL' },
     trucoState: { type: 'NONE', level: null, lastCaller: null },
-    envidoState: { type: 'NONE', lastCaller: null },
+    envidoState: { type: 'NONE', lastCaller: null, humanPoints: 0, aiPoints: 0 },
     roundState: {
       humanStartsRound: Math.random() < 0.5,
       lastTurnWinner: null,
@@ -64,7 +64,12 @@ export function useTrucoGame() {
             gameState.envidoState.type === 'NONE' && gameState.trucoState.type === 'NONE') {
           setGameState(prev => ({
             ...prev,
-            envidoState: { type: 'CALLED', lastCaller: 'AI' },
+            envidoState: { 
+              type: 'CALLED', 
+              lastCaller: 'AI',
+              humanPoints: humanEnvidoPoints,
+              aiPoints: aiEnvidoPoints 
+            },
             message: 'El jugador CPU gritó envido! ¿Aceptás?'
           }));
           return;
@@ -237,13 +242,17 @@ export function useTrucoGame() {
     if (gameState.phase.type !== 'HUMAN_TURN' || 
         gameState.playedCards.length > 0 || 
         gameState.trucoState.type !== 'NONE' ||
-        gameState.envidoState.type !== 'NONE') return;
+        gameState.envidoState.type !== 'NONE') {
+      console.error('Error: Attempted to offer envido in invalid game state. This should not be possible.');
+      return;
+    }
     
     // Cannot offer envido when someone has flor
     const humanHasFlor = hasFlor(gameState.humanCards, gameState.muestraCard);
     const aiHasFlor = hasFlor(gameState.aiCards, gameState.muestraCard);
     
     if (humanHasFlor || aiHasFlor) {
+      console.error('Error: Attempted to offer envido when there is flor. This should not be possible.');
       setGameState(prev => ({
         ...prev,
         message: 'No se puede cantar envido cuando hay flor.'
@@ -251,9 +260,19 @@ export function useTrucoGame() {
       return;
     }
 
+    
+    // Calculate envido points
+    const humanEnvidoPoints = calculateEnvidoPoints(gameState.humanCards, gameState.muestraCard);
+    const aiEnvidoPoints = calculateEnvidoPoints(gameState.aiCards, gameState.muestraCard);
+    
     setGameState(prev => ({
       ...prev,
-      envidoState: { type: 'CALLED', lastCaller: 'HUMAN' },
+      envidoState: { 
+        type: 'CALLED', 
+        lastCaller: 'HUMAN',
+        humanPoints: humanEnvidoPoints,
+        aiPoints: aiEnvidoPoints 
+      },
       message: 'Gritaste envido! El jugador CPU está decidiendo...'
     }));
 
@@ -298,7 +317,12 @@ export function useTrucoGame() {
     } else {
       setGameState(prev => ({
         ...prev,
-        envidoState: { type: 'REJECTED', lastCaller: 'HUMAN' },
+        envidoState: { 
+          type: 'REJECTED', 
+          lastCaller: 'HUMAN',
+          humanPoints: calculateEnvidoPoints(gameState.humanCards, gameState.muestraCard),
+          aiPoints: calculateEnvidoPoints(gameState.aiCards, gameState.muestraCard)
+        },
         message: 'Jugador CPU rechazó envido! Tú recibes 1 punto.',
         humanScore: prev.humanScore + 1
       }));
@@ -482,7 +506,12 @@ export function useTrucoGame() {
     } else {
       setGameState(prev => ({
         ...prev,
-        envidoState: { type: 'REJECTED', lastCaller: 'AI' },
+        envidoState: { 
+          type: 'REJECTED', 
+          lastCaller: 'AI',
+          humanPoints: calculateEnvidoPoints(gameState.humanCards, gameState.muestraCard),
+          aiPoints: calculateEnvidoPoints(gameState.aiCards, gameState.muestraCard)
+        },
         message: 'Rechazaste envido! El jugador CPU recibe 1 punto.',
         aiScore: prev.aiScore + 1
       }));
