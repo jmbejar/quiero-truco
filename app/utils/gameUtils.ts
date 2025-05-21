@@ -40,19 +40,16 @@ const getSpecialCardRank = (card: CardProps): number => {
 /**
  * Checks if the given cards constitute a "flor" according to Uruguayan truco rules
  * @param cards The cards to check
- * @param muestraCard The muestra card for special flor rules (optional)
+ * @param muestraCard The muestra card for special flor rules
  * @returns True if the cards constitute a flor
  */
-export const hasFlor = (cards: CardProps[], muestraCard?: CardProps): boolean => {
+export const hasFlor = (cards: CardProps[], muestraCard: CardProps): boolean => {
   if (cards.length === 0) return false;
   
   // Traditional flor: all cards have the same suit
   const firstSuit = cards[0].palo;
   const allSameSuit = cards.every(card => card.palo === firstSuit);
   if (allSameSuit) return true;
-  
-  // Special cases for Uruguayan truco with muestra
-  if (!muestraCard) return false;
   
   // Count special cards with the same suit as muestra
   const muestraSuit = muestraCard.palo;

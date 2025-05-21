@@ -54,7 +54,7 @@ describe('determineWinner', () => {
 });
 
 describe('hasFlor', () => {
-  const muestra = { number: 4, palo: 'espada' as Palo };
+  const muestra = { number: 7, palo: 'espada' as Palo };
 
   it('returns true when all cards have the same suit (traditional flor)', () => {
     const cards = [
@@ -62,7 +62,6 @@ describe('hasFlor', () => {
       { number: 5, palo: 'espada' as Palo },
       { number: 12, palo: 'espada' as Palo }
     ];
-    expect(hasFlor(cards)).toBe(true);
     expect(hasFlor(cards, muestra)).toBe(true);
   });
 
@@ -72,11 +71,10 @@ describe('hasFlor', () => {
       { number: 5, palo: 'basto' as Palo },
       { number: 12, palo: 'espada' as Palo }
     ];
-    expect(hasFlor(cards)).toBe(false);
+    expect(hasFlor(cards, muestra)).toBe(false);
   });
 
   it('returns false for an empty array', () => {
-    expect(hasFlor([])).toBe(false);
     expect(hasFlor([], muestra)).toBe(false);
   });
 
@@ -88,8 +86,7 @@ describe('hasFlor', () => {
       { number: 7, palo: 'oro' as Palo },
       { number: 11, palo: 'oro' as Palo }
     ];
-    expect(hasFlor(cards)).toBe(false); // Traditional rule would fail
-    expect(hasFlor(cards, muestra)).toBe(true); // But special rule applies
+    expect(hasFlor(cards, muestra)).toBe(true); // Special rule applies
   });
 
   it('returns true when two cards have special muestra suit', () => {
@@ -98,8 +95,7 @@ describe('hasFlor', () => {
       { number: 5, palo: 'espada' as Palo }, // Special muestra card
       { number: 7, palo: 'oro' as Palo }
     ];
-    expect(hasFlor(cards)).toBe(false); // Traditional rule would fail
-    expect(hasFlor(cards, muestra)).toBe(true); // But special rule applies
+    expect(hasFlor(cards, muestra)).toBe(true); // Special rule applies
   });
 
   it('returns false when one card has muestra suit but not a special number', () => {
@@ -108,17 +104,15 @@ describe('hasFlor', () => {
       { number: 7, palo: 'oro' as Palo },
       { number: 11, palo: 'oro' as Palo }
     ];
-    expect(hasFlor(cards)).toBe(false);
     expect(hasFlor(cards, muestra)).toBe(false);
   });
 
-  it('returns false when one card has special number but different suit from muestra', () => {
+  it('returns true when one card has special number but different suit from muestra', () => {
     const cards = [
       { number: 4, palo: 'oro' as Palo }, // Special number but different suit
       { number: 7, palo: 'oro' as Palo },
       { number: 11, palo: 'oro' as Palo }
     ];
-    expect(hasFlor(cards)).toBe(true); // Traditional rule passes
-    expect(hasFlor(cards, muestra)).toBe(true); // Still passes with special rules
+    expect(hasFlor(cards, muestra)).toBe(true); // Traditional rule passes
   });
 }); 
