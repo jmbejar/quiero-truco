@@ -11,7 +11,8 @@ export type GamePhase =
   | { type: 'AI_TURN' }
   | { type: 'SHOWING_PLAYED_CARDS' }
   | { type: 'SHOWING_ENVIDO_POINTS' }
-  | { type: 'ROUND_END' };
+  | { type: 'ROUND_END' }
+  | { type: 'GAME_OVER', winner: 'human' | 'ai' };
 
 // Available Truco Actions
 export type AvailableTrucoAction = 

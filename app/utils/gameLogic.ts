@@ -2,6 +2,27 @@ import { Card, GameState } from '../types/game';
 import { createDeck, dealCards } from './deckUtils';
 import { determineWinner, hasFlor } from './gameUtils';
 
+// Check if either player has reached 15 points, which ends the game
+export function checkGameOver(state: GameState): GameState {
+  const pointLimit = 15;
+  
+  if (state.humanScore >= pointLimit) {
+    return {
+      ...state,
+      phase: { type: 'GAME_OVER', winner: 'human' },
+      message: `¡Has ganado el juego con ${state.humanScore} puntos!`
+    };
+  } else if (state.aiScore >= pointLimit) {
+    return {
+      ...state,
+      phase: { type: 'GAME_OVER', winner: 'ai' },
+      message: `El jugador CPU ha ganado el juego con ${state.aiScore} puntos.`
+    };
+  }
+  
+  return state;
+}
+
 function processFlorAndComposeMessage(
   bottomCards: Card[],
   topCards: Card[],
@@ -38,8 +59,12 @@ export function getInitialGameState(prev: GameState): GameState {
     muestraCard
   );
 
-  // Ensure original cards are also initialized and used correctly for flor calculation
-  return {
+  // Calculate new scores with flor points
+  const newHumanScore = prev.humanScore + (humanHasFlor ? 3 : 0);
+  const newAiScore = prev.aiScore + (aiHasFlor ? 3 : 0);
+
+  // Create initial state
+  const initialState = {
     aiCards: topCards,
     humanCards: bottomCards,
     originalAiCards: [...topCards],
@@ -58,10 +83,13 @@ export function getInitialGameState(prev: GameState): GameState {
       aiWins: 0,
       resultHistory: []
     },
-    humanScore: prev.humanScore + (humanHasFlor ? 3 : 0),
-    aiScore: prev.aiScore + (aiHasFlor ? 3 : 0),
+    humanScore: newHumanScore,
+    aiScore: newAiScore,
     message: initialMessage,
   };
+
+  // Check if game is over after adding flor points
+  return checkGameOver(initialState);
 }
 
 export function getEndRoundState(prev: GameState): GameState {
@@ -100,7 +128,12 @@ export function getPlayerCardSelectState(prev: GameState, index: number): GameSt
     const roundEnded = playerWinsInRound >= 2 || aiWinsInRound >= 2;
     const pointsToAward = prev.trucoState.level === 'VALE4' ? 4 :
                          prev.trucoState.level === 'RETRUCO' ? 3 : 2;
-    return {
+    
+    // Calculate new scores
+    const newHumanScore = roundEnded && playerWinsInRound >= 2 ? prev.humanScore + pointsToAward : prev.humanScore;
+    const newAiScore = roundEnded && aiWinsInRound >= 2 ? prev.aiScore + pointsToAward : prev.aiScore;
+    
+    const updatedState = {
       ...prev,
       humanCards: updatedHumanCards,
       humanPlayedCard: selectedCard,
@@ -116,9 +149,12 @@ export function getPlayerCardSelectState(prev: GameState, index: number): GameSt
         resultHistory: newResultHistory,
         lastTurnWinner: playerWon ? 'human' : 'ai'
       },
-      humanScore: roundEnded && playerWinsInRound >= 2 ? prev.humanScore + pointsToAward : prev.humanScore,
-      aiScore: roundEnded && aiWinsInRound >= 2 ? prev.aiScore + pointsToAward : prev.aiScore
+      humanScore: newHumanScore,
+      aiScore: newAiScore
     };
+    
+    // Check if the game is over after updating scores
+    return checkGameOver(updatedState);
   }
   return {
     ...prev,

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { getInitialGameState, getEndRoundState, getNextTurnState, getPlayerCardSelectState } from '../utils/gameLogic';
+import { getInitialGameState, getEndRoundState, getNextTurnState, getPlayerCardSelectState, checkGameOver } from '../utils/gameLogic';
 import { getAIDecision, getTrucoOfferAIDecision, getEnvidoOfferAIDecision } from '../utils/aiUtils';
 import { determineWinner, hasFlor, calculateEnvidoPoints } from '../utils/gameUtils';
 import { GameState } from '../types/game';
@@ -34,7 +34,18 @@ export function useTrucoGame() {
   const nextTurnAnimationRef = useRef<number | null>(null);
 
   const initializeGame = useCallback(() => {
-    setGameState(prev => getInitialGameState(prev));
+    setGameState(prev => {
+      // If game was over, reset scores for a new game
+      if (prev.phase.type === 'GAME_OVER') {
+        return getInitialGameState({
+          ...prev,
+          humanScore: 0,
+          aiScore: 0
+        });
+      }
+      // Otherwise, continue with regular round initialization
+      return getInitialGameState(prev);
+    });
   }, []);
 
   const endRound = useCallback(() => {
@@ -105,7 +116,12 @@ export function useTrucoGame() {
             const pointsToAward = prev.trucoState.type === 'ACCEPTED' && prev.trucoState.level ? 
               (prev.trucoState.level === 'VALE4' ? 4 :
                prev.trucoState.level === 'RETRUCO' ? 3 : 2) : 1;
-            return {
+            
+            // Calculate new scores
+            const newHumanScore = roundEnded && playerWinsInRound >= 2 ? prev.humanScore + pointsToAward : prev.humanScore;
+            const newAiScore = roundEnded && aiWinsInRound >= 2 ? prev.aiScore + pointsToAward : prev.aiScore;
+            
+            const updatedState = {
               ...prev,
               aiCards: updatedAiCards,
               aiPlayedCard: selectedCard,
@@ -121,9 +137,12 @@ export function useTrucoGame() {
                 resultHistory: newResultHistory,
                 lastTurnWinner: playerWon ? 'human' : 'ai'
               },
-              humanScore: roundEnded && playerWinsInRound >= 2 ? prev.humanScore + pointsToAward : prev.humanScore,
-              aiScore: roundEnded && aiWinsInRound >= 2 ? prev.aiScore + pointsToAward : prev.aiScore
+              humanScore: newHumanScore,
+              aiScore: newAiScore
             };
+            
+            // Check if the game is over
+            return checkGameOver(updatedState);
           }
           return {
             ...prev,
@@ -153,7 +172,12 @@ export function useTrucoGame() {
           const pointsToAward = prev.trucoState.type === 'ACCEPTED' && prev.trucoState.level ? 
             (prev.trucoState.level === 'VALE4' ? 4 :
              prev.trucoState.level === 'RETRUCO' ? 3 : 2) : 1;
-          return {
+          
+          // Calculate new scores
+          const newHumanScore = roundEnded && playerWinsInRound >= 2 ? prev.humanScore + pointsToAward : prev.humanScore;
+          const newAiScore = roundEnded && aiWinsInRound >= 2 ? prev.aiScore + pointsToAward : prev.aiScore;
+          
+          const updatedState = {
             ...prev,
             aiCards: updatedAiCards,
             aiPlayedCard: selectedCard,
@@ -169,9 +193,12 @@ export function useTrucoGame() {
               resultHistory: newResultHistory,
               lastTurnWinner: playerWon ? 'human' : 'ai'
             },
-            humanScore: roundEnded && playerWinsInRound >= 2 ? prev.humanScore + pointsToAward : prev.humanScore,
-            aiScore: roundEnded && aiWinsInRound >= 2 ? prev.aiScore + pointsToAward : prev.aiScore
+            humanScore: newHumanScore,
+            aiScore: newAiScore
           };
+          
+          // Check if the game is over
+          return checkGameOver(updatedState);
         }
         return {
           ...prev,
@@ -222,13 +249,17 @@ export function useTrucoGame() {
         const points = nextLevel === 'VALE4' ? 4 : 
                       nextLevel === 'RETRUCO' ? 3 : 2;
         const rejectedPoints = points - 1;
-        return {
+        const newHumanScore = prev.humanScore + rejectedPoints;
+        
+        const updatedState = {
           ...prev,
           trucoState: { type: 'REJECTED', level: nextLevel, lastCaller: 'HUMAN' },
           message: `Jugador CPU rechazó ${nextLevel}! Tú recibes ${rejectedPoints} puntos!`,
           phase: { type: 'ROUND_END' },
-          humanScore: prev.humanScore + rejectedPoints
+          humanScore: newHumanScore
         };
+        
+        return checkGameOver(updatedState);
       });
     } else if (aiDecision.action === 'escalate') {
       let escalateLevel: 'RETRUCO' | 'VALE4' | null = null;
@@ -312,29 +343,38 @@ export function useTrucoGame() {
       setTimeout(() => {
         setGameState(prev => {
           const envidoWinner = prev.envidoState.humanPoints! > prev.envidoState.aiPoints! ? 'human' : 'ai';
-          return {
+          const newHumanScore = envidoWinner === 'human' ? prev.humanScore + 2 : prev.humanScore;
+          const newAiScore = envidoWinner === 'ai' ? prev.aiScore + 2 : prev.aiScore;
+          
+          const updatedState = {
             ...prev,
             phase: { type: 'HUMAN_TURN' },
-            humanScore: envidoWinner === 'human' ? prev.humanScore + 2 : prev.humanScore,
-            aiScore: envidoWinner === 'ai' ? prev.aiScore + 2 : prev.aiScore,
+            humanScore: newHumanScore,
+            aiScore: newAiScore,
             message: envidoWinner === 'human' ? 
               'Ganaste el envido! +2 puntos. Te toca jugar.' : 
               'El jugador CPU ganó el envido! +2 puntos. Te toca jugar.'
           };
+          
+          return checkGameOver(updatedState);
         });
       }, 3000);
     } else {
-      setGameState(prev => ({
-        ...prev,
-        envidoState: { 
-          type: 'REJECTED', 
-          lastCaller: 'HUMAN',
-          humanPoints: 0,
-          aiPoints: 0
-        },
-        message: 'Jugador CPU rechazó envido! Tú recibes 1 punto.',
-        humanScore: prev.humanScore + 1
-      }));
+      setGameState(prev => {
+        const newHumanScore = prev.humanScore + 1;
+        const updatedState = {
+          ...prev,
+          envidoState: { 
+            type: 'REJECTED', 
+            lastCaller: 'HUMAN',
+            humanPoints: 0,
+            aiPoints: 0
+          },
+          message: 'Jugador CPU rechazó envido! Tú recibes 1 punto.',
+          humanScore: newHumanScore
+        };
+        return checkGameOver(updatedState);
+      });
     }
   }, [gameState]);
 
@@ -390,13 +430,17 @@ export function useTrucoGame() {
       } else if (action === 'reject') {
         const points = prev.trucoState.level === 'VALE4' ? 3 :
                       prev.trucoState.level === 'RETRUCO' ? 2 : 1;
-        return {
+        const newAiScore = prev.aiScore + points;
+        
+        const updatedState = {
           ...prev,
           trucoState: { type: 'REJECTED', level: prev.trucoState.level, lastCaller: 'AI' },
           message: `Rechazaste ${prev.trucoState.level}! El jugador CPU recibe ${points} puntos.`,
           phase: { type: 'ROUND_END' },
-          aiScore: prev.aiScore + points
+          aiScore: newAiScore
         };
+        
+        return checkGameOver(updatedState);
       } else if (action === 'escalate') {
         let escalateLevel: 'RETRUCO' | 'VALE4' | null = null;
         if (prev.trucoState.level === 'TRUCO') escalateLevel = 'RETRUCO';
@@ -513,17 +557,21 @@ export function useTrucoGame() {
         }, 3000);
       })();
     } else {
-      setGameState(prev => ({
-        ...prev,
-        envidoState: { 
-          type: 'REJECTED', 
-          lastCaller: 'AI',
-          humanPoints: 0,
-          aiPoints: 0
-        },
-        message: 'Rechazaste envido! El jugador CPU recibe 1 punto.',
-        aiScore: prev.aiScore + 1
-      }));
+      setGameState(prev => {
+        const newAiScore = prev.aiScore + 1;
+        const updatedState = {
+          ...prev,
+          envidoState: { 
+            type: 'REJECTED', 
+            lastCaller: 'AI',
+            humanPoints: 0,
+            aiPoints: 0
+          },
+          message: 'Rechazaste envido! El jugador CPU recibe 1 punto.',
+          aiScore: newAiScore
+        };
+        return checkGameOver(updatedState);
+      });
     }
   }, [gameState]);
 

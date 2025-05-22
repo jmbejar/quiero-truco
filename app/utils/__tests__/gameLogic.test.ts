@@ -1,4 +1,4 @@
-import { getInitialGameState } from '../gameLogic';
+import { getInitialGameState, checkGameOver } from '../gameLogic';
 import { GameState } from '../../types/game';
 import * as deckUtils from '../deckUtils';
 
@@ -120,6 +120,56 @@ describe('getInitialGameState', () => {
     
     expect(state.humanScore).toBe(13); // 10 + 3
     expect(state.aiScore).toBe(15);    // 12 + 3
-    expect(state.message).toContain('Ambos jugadores cantan flor');
+    
+    // Game should be over with AI as the winner since they reached 15 points
+    expect(state.phase.type).toBe('GAME_OVER');
+    expect((state.phase as { type: 'GAME_OVER', winner: 'human' | 'ai' }).winner).toBe('ai');
+    expect(state.message).toContain('El jugador CPU ha ganado el juego con 15 puntos');
+  });
+});
+
+describe('checkGameOver', () => {
+  it('sets game phase to GAME_OVER when human score reaches 15', () => {
+    const state: Partial<GameState> = {
+      humanScore: 15,
+      aiScore: 10,
+      phase: { type: 'ROUND_END' },
+      message: 'Round ended'
+    };
+    
+    const result = checkGameOver(state as GameState);
+    
+    expect(result.phase.type).toBe('GAME_OVER');
+    expect((result.phase as { type: 'GAME_OVER', winner: 'human' | 'ai' }).winner).toBe('human');
+    expect(result.message).toContain('Has ganado el juego');
+  });
+  
+  it('sets game phase to GAME_OVER when AI score reaches 15', () => {
+    const state: Partial<GameState> = {
+      humanScore: 10,
+      aiScore: 15,
+      phase: { type: 'ROUND_END' },
+      message: 'Round ended'
+    };
+    
+    const result = checkGameOver(state as GameState);
+    
+    expect(result.phase.type).toBe('GAME_OVER');
+    expect((result.phase as { type: 'GAME_OVER', winner: 'human' | 'ai' }).winner).toBe('ai');
+    expect(result.message).toContain('El jugador CPU ha ganado el juego');
+  });
+  
+  it('does not change game phase when scores are below 15', () => {
+    const state: Partial<GameState> = {
+      humanScore: 14,
+      aiScore: 14,
+      phase: { type: 'ROUND_END' },
+      message: 'Round ended'
+    };
+    
+    const result = checkGameOver(state as GameState);
+    
+    expect(result).toBe(state);
+    expect(result.phase.type).toBe('ROUND_END');
   });
 }); 
