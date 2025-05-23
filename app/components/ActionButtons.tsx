@@ -63,6 +63,14 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         Siguiente Ronda
       </button>
     )}
+    {phase.type === 'GAME_OVER' && (
+      <button 
+        onClick={onNextRound}
+        className="bg-purple-600 hover:bg-purple-800 text-white font-bold py-2 px-4 rounded w-full cursor-pointer"
+      >
+        Nuevo Juego
+      </button>
+    )}
     {phase.type === 'SHOWING_PLAYED_CARDS' && (
       <button 
         onClick={onNextTurn}
