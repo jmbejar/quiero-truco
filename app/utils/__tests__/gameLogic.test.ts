@@ -122,4 +122,38 @@ describe('getInitialGameState', () => {
     expect(state.aiScore).toBe(15);    // 12 + 3
     expect(state.message).toContain('Ambos jugadores cantan flor');
   });
-}); 
+});
+
+describe('getPlayerCardSelectState', () => {
+  it('awards 1 point when human wins round without truco', () => {
+    const prev: GameState = {
+      aiCards: [],
+      humanCards: [{ number: 3, palo: 'basto' }],
+      originalAiCards: [],
+      originalHumanCards: [{ number: 3, palo: 'basto' }],
+      muestraCard: { number: 7, palo: 'espada' },
+      humanPlayedCard: null,
+      aiPlayedCard: { number: 1, palo: 'oro' },
+      playedCards: [],
+      phase: { type: 'HUMAN_TURN' },
+      trucoState: { type: 'NONE', level: null, lastCaller: null },
+      envidoState: { type: 'NONE', lastCaller: null, humanPoints: 0, aiPoints: 0 },
+      roundState: {
+        humanStartsRound: true,
+        lastTurnWinner: 'ai',
+        humanWins: 1,
+        aiWins: 1,
+        resultHistory: ['lose', 'win'],
+      },
+      humanScore: 0,
+      aiScore: 0,
+      message: '',
+    };
+
+    const next = getPlayerCardSelectState(prev, 0);
+
+    expect(next.humanScore).toBe(1);
+    expect(next.aiScore).toBe(0);
+    expect(next.message).toContain('+1');
+  });
+});

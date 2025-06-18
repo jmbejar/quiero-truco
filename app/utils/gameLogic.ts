@@ -98,8 +98,14 @@ export function getPlayerCardSelectState(prev: GameState, index: number): GameSt
     const playerWinsInRound = newResultHistory.filter(result => result === 'win').length;
     const aiWinsInRound = newResultHistory.filter(result => result === 'lose').length;
     const roundEnded = playerWinsInRound >= 2 || aiWinsInRound >= 2;
-    const pointsToAward = prev.trucoState.level === 'VALE4' ? 4 :
-                         prev.trucoState.level === 'RETRUCO' ? 3 : 2;
+    const pointsToAward =
+      prev.trucoState.type === 'ACCEPTED' && prev.trucoState.level
+        ? prev.trucoState.level === 'VALE4'
+          ? 4
+          : prev.trucoState.level === 'RETRUCO'
+            ? 3
+            : 2
+        : 1;
     return {
       ...prev,
       humanCards: updatedHumanCards,
